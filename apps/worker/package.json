@@ -1,0 +1,5 @@
+{
+  "name": "@art/worker",
+  "type": "module",
+  "private": true
+}
