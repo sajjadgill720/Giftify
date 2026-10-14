@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useReducer, useRef } from "react";
+import type { CSSProperties } from "react";
 import { historyReducer } from "../../../packages/domain/src/editor-history";
 import { CoordinateControls } from "./coordinate-controls";
 import { MemoryControls } from "./memory-controls";
@@ -241,8 +242,36 @@ export default function Studio({
       <div className="studio-layout">
         <div className="studio-preview">
           <span className="eyebrow">YOUR STORY, TAKING SHAPE</span>
-          <div className={"studio-art memory-scene-" + scene}>
-            <Artwork design={design} inspirationWhenEmpty />
+          <div
+            className={"studio-art memory-scene-" + scene}
+            style={
+              {
+                "--preview-frame-width":
+                  design.size === "A4" ? "285px" : "360px",
+              } as CSSProperties
+            }
+          >
+            <Artwork
+              design={design}
+              inspirationWhenEmpty
+              onPhotoPosition={
+                step === 0 && design.memory
+                  ? (index, position) => {
+                      if (index < 0) return;
+                      edit({
+                        ...design,
+                        memory: {
+                          ...design.memory!,
+                          qualityAcknowledged: false,
+                          photos: design.memory!.photos.map((p, i) =>
+                            i === index ? { ...p, ...position } : p,
+                          ),
+                        },
+                      });
+                    }
+                  : undefined
+              }
+            />
           </div>
           <div className="scene-switch" aria-label="Preview setting">
             {[
@@ -259,6 +288,37 @@ export default function Studio({
                 {label}
               </button>
             ))}
+          </div>
+          <div className="preview-frame-controls">
+            <label>
+              Frame size
+              <select
+                aria-label="Preview frame size"
+                value={design.size}
+                onChange={(e) =>
+                  edit({ ...design, size: e.target.value as Design["size"] })
+                }
+              >
+                <option value="A4">A4 · 21 × 29.7 cm</option>
+                <option value="A3">A3 · 29.7 × 42 cm</option>
+              </select>
+            </label>
+            <label>
+              Frame finish
+              <select
+                aria-label="Preview frame finish"
+                value={design.finish}
+                onChange={(e) =>
+                  edit({
+                    ...design,
+                    finish: e.target.value as Design["finish"],
+                  })
+                }
+              >
+                <option value="oak">Natural oak effect</option>
+                <option value="black">Matte black</option>
+              </select>
+            </label>
           </div>
           <div className="preview-tools">
             <span>

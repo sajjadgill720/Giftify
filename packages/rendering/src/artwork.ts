@@ -2,6 +2,7 @@ import { Design, dimensions } from "../../domain/src/index";
 import { formatCoordinate } from "../../domain/src/coordinates";
 import { memoryLayout, memoryMarker } from "./memory-layout";
 import type { Photo } from "../../domain/src/memory";
+import { svgFont } from "./fonts";
 export type Shape =
   | { path: string; fill?: string; stroke?: string; width?: number }
   | {
@@ -260,5 +261,5 @@ export function svg(d: Design, images: (string | undefined)[] = []) {
         `${"path" in s ? `<path d="${s.path}"` : `<circle cx="${s.circle[0]}" cy="${s.circle[1]}" r="${s.circle[2]}"`} fill="${s.fill}" stroke="${s.stroke || "none"}" stroke-width="${s.width || 0.5}"/>`,
     )
     .join("");
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${l.w}mm" height="${l.h}mm" viewBox="0 0 ${l.w} ${l.h}" role="img" aria-label="Personalized artwork"><rect width="100%" height="100%" fill="${l.background}"/>${l.border ? `<rect x="12" y="12" width="${l.w - 24}" height="${l.h - 24}" fill="none" stroke="${l.color}" stroke-width=".5"/>` : ""}${l.shapes.map((s) => `${"path" in s ? `<path d="${s.path}"` : `<circle cx="${s.circle[0]}" cy="${s.circle[1]}" r="${s.circle[2]}"`} fill="${s.fill || "none"}" stroke="${s.stroke || "none"}" stroke-width="${s.width || 0.45}"/>`).join("")}${pictures}${marker}${l.lines.map((t) => `<text x="${l.w / 2}" y="${t.y}" text-anchor="middle" direction="auto" font-family="${t.font === "serif" && !l.border ? "Times New Roman,serif" : "Helvetica,Arial,sans-serif"}" font-size="${t.size}" fill="${l.color}">${escape(t.text)}</text>`).join("")}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${l.w}mm" height="${l.h}mm" viewBox="0 0 ${l.w} ${l.h}" role="img" aria-label="Personalized artwork"><rect width="100%" height="100%" fill="${l.background}"/>${l.border ? `<rect x="12" y="12" width="${l.w - 24}" height="${l.h - 24}" fill="none" stroke="${l.color}" stroke-width=".5"/>` : ""}${l.shapes.map((s) => `${"path" in s ? `<path d="${s.path}"` : `<circle cx="${s.circle[0]}" cy="${s.circle[1]}" r="${s.circle[2]}"`} fill="${s.fill || "none"}" stroke="${s.stroke || "none"}" stroke-width="${s.width || 0.45}"/>`).join("")}${pictures}${marker}${l.lines.map((t) => `<text x="${l.w / 2}" y="${t.y}" text-anchor="middle" direction="auto" ${svgFont(t.font, l.border)} font-size="${t.size}" fill="${l.color}">${escape(t.text)}</text>`).join("")}</svg>`;
 }

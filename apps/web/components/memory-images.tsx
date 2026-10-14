@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Design } from "../../../packages/domain/src/index";
 import { cropGeometry } from "../../../packages/domain/src/memory";
 import {
@@ -10,10 +10,26 @@ import { api } from "../lib/client";
 export function MemoryImages({
   design,
   endpoint = "assets",
+  onPhotoPosition,
 }: {
   design: Design;
   endpoint?: string;
+  onPhotoPosition?: (index: number, position: { x: number; y: number }) => void;
 }) {
+  const [position, setPosition] = useState<{
+    index: number;
+    x: number;
+    y: number;
+  } | null>(null);
+  const drag = useRef<{
+    index: number;
+    startX: number;
+    startY: number;
+    x: number;
+    y: number;
+    travelX: number;
+    travelY: number;
+  } | null>(null);
   const [assets, setAssets] = useState<
     Record<string, { width: number; height: number }>
   >({});
@@ -48,7 +64,10 @@ export function MemoryImages({
   const [w, h] = design.size === "A4" ? [210, 297] : [297, 420];
   return (
     <>
-      <div className="memory-photo-layer" aria-hidden="true">
+      <div
+        className={`memory-photo-layer ${onPhotoPosition ? "editable-photo-layer" : ""}`}
+        aria-hidden={onPhotoPosition ? undefined : true}
+      >
         {pics.map((pic, i) => {
           const a = assets[pic.assetId];
           if (!a) return null;
@@ -56,12 +75,124 @@ export function MemoryImages({
             a.width,
             a.height,
             pic.width / pic.height,
-            pic.photo,
+            position?.index === i
+              ? { ...pic.photo, x: position.x, y: position.y }
+              : pic.photo,
           );
           return (
             <div
               key={pic.assetId + ":" + i}
               className="memory-photo-window"
+              tabIndex={
+                onPhotoPosition && pic.assetId !== design.memory?.map?.assetId
+                  ? 0
+                  : undefined
+              }
+              role={onPhotoPosition ? "group" : undefined}
+              aria-label={
+                onPhotoPosition
+                  ? `Position photograph ${i + 1}. Drag to move or use arrow keys.`
+                  : undefined
+              }
+              onPointerDown={(e) => {
+                if (
+                  !onPhotoPosition ||
+                  pic.assetId === design.memory?.map?.assetId ||
+                  (e.pointerType === "mouse" && e.button !== 0)
+                )
+                  return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                drag.current = {
+                  index: i,
+                  startX: e.clientX,
+                  startY: e.clientY,
+                  x: pic.photo.x,
+                  y: pic.photo.y,
+                  travelX: rect.width * (crop.sourceWidth / crop.width - 1),
+                  travelY: rect.height * (crop.sourceHeight / crop.height - 1),
+                };
+                e.currentTarget.setPointerCapture(e.pointerId);
+              }}
+              onPointerMove={(e) => {
+                const p = drag.current;
+                if (!p || p.index !== i) return;
+                setPosition({
+                  index: i,
+                  x:
+                    p.travelX > 0
+                      ? Math.max(
+                          0,
+                          Math.min(1, p.x - (e.clientX - p.startX) / p.travelX),
+                        )
+                      : p.x,
+                  y:
+                    p.travelY > 0
+                      ? Math.max(
+                          0,
+                          Math.min(1, p.y - (e.clientY - p.startY) / p.travelY),
+                        )
+                      : p.y,
+                });
+              }}
+              onPointerUp={(e) => {
+                if (!drag.current) return;
+                if (position && onPhotoPosition)
+                  onPhotoPosition(
+                    design.memory!.photos.findIndex(
+                      (p) => p.assetId === pic.assetId,
+                    ),
+                    { x: position.x, y: position.y },
+                  );
+                drag.current = null;
+                setPosition(null);
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }}
+              onPointerCancel={() => {
+                drag.current = null;
+                setPosition(null);
+              }}
+              onKeyDown={(e) => {
+                if (
+                  !onPhotoPosition ||
+                  !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
+                    e.key,
+                  ) ||
+                  pic.assetId === design.memory?.map?.assetId
+                )
+                  return;
+                e.preventDefault();
+                onPhotoPosition(
+                  design.memory!.photos.findIndex(
+                    (p) => p.assetId === pic.assetId,
+                  ),
+                  {
+                    x: Math.max(
+                      0,
+                      Math.min(
+                        1,
+                        pic.photo.x +
+                          (e.key === "ArrowLeft"
+                            ? -0.05
+                            : e.key === "ArrowRight"
+                              ? 0.05
+                              : 0),
+                      ),
+                    ),
+                    y: Math.max(
+                      0,
+                      Math.min(
+                        1,
+                        pic.photo.y +
+                          (e.key === "ArrowUp"
+                            ? -0.05
+                            : e.key === "ArrowDown"
+                              ? 0.05
+                              : 0),
+                      ),
+                    ),
+                  },
+                );
+              }}
               style={{
                 left: (pic.x / w) * 100 + "%",
                 top: (pic.y / h) * 100 + "%",

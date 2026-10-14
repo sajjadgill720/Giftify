@@ -28,7 +28,9 @@ export function MemoryControls({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [replace, setReplace] = useState(false),
+    [adding, setAdding] = useState(false),
     [query, setQuery] = useState(""),
+    [imageQuery, setImageQuery] = useState(""),
     [results, setResults] = useState<any[]>([]),
     [mapsReady, setMapsReady] = useState(false),
     [point, setPoint] = useState<
@@ -55,8 +57,9 @@ export function MemoryControls({
     setBusy(value);
     onBusy(value);
   }
-  async function upload(files: FileList | null) {
+  async function upload(files: FileList | File[] | null) {
     if (!files?.length) return;
+    if (busy) return;
     setError("");
     pending(true);
     try {
@@ -66,6 +69,8 @@ export function MemoryControls({
           "You can keep up to four photographs in a design. Remove one first, or replace the selected photo.",
         );
       for (const file of Array.from(files).slice(0, available)) {
+        if (!["image/jpeg", "image/png"].includes(file.type))
+          throw new Error("Choose a JPEG or PNG photograph.");
         if (file.size > 8 * 1024 * 1024)
           throw new Error("Choose a photograph smaller than 8 MB.");
         const response = await fetch("/api/assets", {
@@ -101,6 +106,7 @@ export function MemoryControls({
     } finally {
       pending(false);
       setReplace(false);
+      setAdding(false);
     }
   }
   function photoEdit(values: Partial<Photo>) {
@@ -220,7 +226,15 @@ export function MemoryControls({
             key={mode}
             className={m.mode === mode ? "selected" : ""}
             aria-pressed={m.mode === mode}
-            onClick={() => update({ mode })}
+            onClick={() =>
+              update({
+                mode,
+                layout:
+                  mode !== "photo" && m.layout === "fullbleed"
+                    ? "portrait"
+                    : m.layout,
+              })
+            }
           >
             {label}
           </button>
@@ -337,32 +351,121 @@ export function MemoryControls({
               </label>
             </div>
           )}
-          <label className="photo-upload">
-            <Icon name="frame" size={25} />
-            <strong>
-              {busy
-                ? "Keeping your photo safe…"
-                : replace
-                  ? "Replace selected photograph"
-                  : m.mode === "place"
-                    ? "Add a photograph to your map"
-                    : "Add your favorite photographs"}
-            </strong>
-            <span>JPEG or PNG · Up to 8 MB each · Private to you</span>
-            <input
-              aria-label="Upload photographs"
-              type="file"
-              accept="image/jpeg,image/png"
-              multiple={!replace}
-              disabled={busy}
-              onChange={(e) => {
-                void upload(e.target.files);
-                e.target.value = "";
+          {(!m.photos.length || replace || adding) && (
+            <label
+              className="photo-upload"
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (!busy) e.currentTarget.classList.add("drag-active");
               }}
-            />
-          </label>
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node))
+                  e.currentTarget.classList.remove("drag-active");
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove("drag-active");
+                void upload(e.dataTransfer.files);
+              }}
+            >
+              <Icon name="frame" size={25} />
+              <strong>
+                {busy
+                  ? "Keeping your photo safe…"
+                  : replace
+                    ? "Replace selected photograph"
+                    : m.mode === "place"
+                      ? "Add a photograph to your map"
+                      : "Add your favorite photographs"}
+              </strong>
+              <span>
+                Drop photos here or choose files · JPEG or PNG · Up to 8 MB each
+              </span>
+              <input
+                aria-label="Upload photographs"
+                type="file"
+                accept="image/jpeg,image/png"
+                multiple={!replace}
+                disabled={busy}
+                onChange={(e) => {
+                  void upload(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          )}
+          {(replace || adding) && m.photos.length > 0 && (
+            <button
+              className="text-button"
+              disabled={busy}
+              onClick={() => {
+                setReplace(false);
+                setAdding(false);
+              }}
+            >
+              Cancel photo change
+            </button>
+          )}
+          {!m.photos.length && (
+            <details className="image-inspiration">
+              <summary>Find photo inspiration on Google</summary>
+              <label className="field">
+                What would you like to find?
+                <input
+                  value={imageQuery}
+                  maxLength={100}
+                  onChange={(e) => setImageQuery(e.target.value)}
+                  placeholder="e.g. a peaceful mountain landscape"
+                />
+              </label>
+              {imageQuery.trim() && (
+                <a
+                  className="text-link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href={`https://www.google.com/search?udm=2&q=${encodeURIComponent(imageQuery.trim())}`}
+                >
+                  Search Google Images ↗
+                </a>
+              )}
+              <p className="field-hint">
+                Opens Google in a new tab. Upload a photo you own or have
+                permission to print.
+              </p>
+            </details>
+          )}
           {m.photos.length > 0 && (
             <>
+              <div className="photo-manager-heading">
+                <div>
+                  <strong>Your photographs</strong>
+                  <span>{m.photos.length} added · Kept privately</span>
+                </div>
+                <div className="photo-manager-actions">
+                  <button
+                    className="text-button"
+                    disabled={busy}
+                    onClick={() => {
+                      setAdding(false);
+                      setReplace(true);
+                    }}
+                  >
+                    Change photo
+                  </button>
+                  {m.photos.length < 4 && (
+                    <button
+                      className="text-button"
+                      disabled={busy}
+                      onClick={() => {
+                        setReplace(false);
+                        setAdding(true);
+                      }}
+                    >
+                      + Add another
+                    </button>
+                  )}
+                </div>
+              </div>
               <div className="photo-picker">
                 {m.photos.map((p, i) => (
                   <button
@@ -434,7 +537,10 @@ export function MemoryControls({
                     </button>
                     <button
                       className="text-button"
-                      onClick={() => setReplace(true)}
+                      onClick={() => {
+                        setAdding(false);
+                        setReplace(true);
+                      }}
                     >
                       Replace photo
                     </button>
@@ -519,7 +625,7 @@ export function MemoryControls({
           onChange={(e) => update({ place: e.target.value })}
         />
       </label>
-      <details className="memory-appearance">
+      <details className="memory-appearance" open>
         <summary>Layout, fonts & colours</summary>
         <div className="memory-design-options">
           <label className="field">
@@ -536,49 +642,56 @@ export function MemoryControls({
               <option value="portrait">Classic portrait</option>
               <option value="gallery">Gallery border</option>
               <option value="collage">Photo collage</option>
+              {m.layout === "fullbleed" && (
+                <option value="fullbleed" hidden>
+                  Previously saved layout
+                </option>
+              )}
             </select>
           </label>
-          <details className="memory-appearance">
-            <summary>Fine-tune the exact location</summary>
-            <div className="coordinate-pair">
-              <label className="field">
-                Map latitude
-                <input
-                  type="number"
-                  min={-85}
-                  max={85}
-                  step="any"
-                  value={point?.latitude ?? ""}
-                  onChange={(e) =>
-                    setPoint((current) => ({
-                      latitude: Number(e.target.value),
-                      longitude: current?.longitude ?? 0,
-                    }))
-                  }
-                />
-              </label>
-              <label className="field">
-                Map longitude
-                <input
-                  type="number"
-                  min={-180}
-                  max={180}
-                  step="any"
-                  value={point?.longitude ?? ""}
-                  onChange={(e) =>
-                    setPoint((current) => ({
-                      latitude: current?.latitude ?? 0,
-                      longitude: Number(e.target.value),
-                    }))
-                  }
-                />
-              </label>
-            </div>
-            <p className="field-hint">
-              North/east are positive; south/west negative. Check your point,
-              then apply the map.
-            </p>
-          </details>
+          {m.mode === "place" && (
+            <details className="memory-appearance">
+              <summary>Fine-tune the exact location</summary>
+              <div className="coordinate-pair">
+                <label className="field">
+                  Map latitude
+                  <input
+                    type="number"
+                    min={-85}
+                    max={85}
+                    step="any"
+                    value={point?.latitude ?? ""}
+                    onChange={(e) =>
+                      setPoint((current) => ({
+                        latitude: Number(e.target.value),
+                        longitude: current?.longitude ?? 0,
+                      }))
+                    }
+                  />
+                </label>
+                <label className="field">
+                  Map longitude
+                  <input
+                    type="number"
+                    min={-180}
+                    max={180}
+                    step="any"
+                    value={point?.longitude ?? ""}
+                    onChange={(e) =>
+                      setPoint((current) => ({
+                        latitude: current?.latitude ?? 0,
+                        longitude: Number(e.target.value),
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+              <p className="field-hint">
+                North/east are positive; south/west negative. Check your point,
+                then apply the map.
+              </p>
+            </details>
+          )}
           <label className="field">
             Typography
             <select
@@ -589,25 +702,151 @@ export function MemoryControls({
             >
               <option value="classic">Elegant serif</option>
               <option value="modern">Modern sans</option>
+              <option value="editorial">Editorial italic</option>
+              <option value="bold">Confident bold</option>
+              <option value="mono">Typewriter</option>
             </select>
           </label>
         </div>
         <fieldset>
-          <legend>Background palette</legend>
+          <legend>Paper &amp; color</legend>
+          <p className="field-hint">
+            Choose a palette or fine-tune the same paper color below.
+          </p>
           <div className="memory-palette">
-            {(["ivory", "rose", "sage", "midnight"] as const).map((bg) => (
+            {(
+              [
+                "ivory",
+                "rose",
+                "sage",
+                "midnight",
+                "sand",
+                "sky",
+                "lavender",
+                "charcoal",
+              ] as const
+            ).map((bg) => (
               <button
                 key={bg}
-                className={m.background === bg ? "selected" : ""}
-                aria-pressed={m.background === bg}
-                onClick={() => update({ background: bg })}
+                className={
+                  !m.backgroundColor && m.background === bg ? "selected" : ""
+                }
+                aria-pressed={!m.backgroundColor && m.background === bg}
+                onClick={() =>
+                  update({ background: bg, backgroundColor: undefined })
+                }
               >
                 <span className={bg} />
                 {bg[0].toUpperCase() + bg.slice(1)}
               </button>
             ))}
           </div>
+          <div className="art-color-controls">
+            <label className="field">
+              Custom paper color
+              <input
+                type="color"
+                value={
+                  m.backgroundColor ||
+                  {
+                    ivory: "#faf6ed",
+                    rose: "#f4e7e2",
+                    sage: "#e8eee5",
+                    midnight: "#243648",
+                    sand: "#eadbc4",
+                    sky: "#e3edf2",
+                    lavender: "#eae4f1",
+                    charcoal: "#30332f",
+                  }[m.background]
+                }
+                onChange={(e) => update({ backgroundColor: e.target.value })}
+                onInput={(e) =>
+                  update({ backgroundColor: e.currentTarget.value })
+                }
+              />
+            </label>
+            <label className="field">
+              Text color
+              <input
+                type="color"
+                value={
+                  m.textColor ||
+                  (["midnight", "charcoal"].includes(m.background)
+                    ? "#faf6ed"
+                    : "#353932")
+                }
+                onChange={(e) => update({ textColor: e.target.value })}
+                onInput={(e) => update({ textColor: e.currentTarget.value })}
+              />
+            </label>
+          </div>
         </fieldset>
+        {m.mode === "photo" &&
+          m.layout === "portrait" &&
+          !["family", "pet"].includes(design.template) && (
+            <label className="field">
+              Photo area · {Math.round((m.photoHeight ?? 0.57) * 100)}%
+              <input
+                type="range"
+                min={0.4}
+                max={0.65}
+                step={0.01}
+                value={m.photoHeight ?? 0.57}
+                onChange={(e) =>
+                  update({
+                    photoHeight: Number(e.target.value),
+                    qualityAcknowledged: false,
+                  })
+                }
+              />
+            </label>
+          )}
+        {m.layout === "fullbleed" && m.mode === "photo" ? (
+          <p className="soft-note">
+            Your first photo fills the artwork. Wording stays saved for when you
+            switch back. Drag the photo in the preview to position it, or use
+            the crop sliders.
+          </p>
+        ) : (
+          <>
+            <label className="field">
+              Headline size · {Math.round((m.titleScale ?? 1) * 100)}%
+              <input
+                type="range"
+                min={0.75}
+                max={2.4}
+                step={0.05}
+                value={m.titleScale ?? 1}
+                onChange={(e) => update({ titleScale: Number(e.target.value) })}
+              />
+            </label>
+            <label className="field">
+              Supporting text size · {Math.round((m.textScale ?? 1) * 100)}%
+              <input
+                type="range"
+                min={0.75}
+                max={1.8}
+                step={0.05}
+                value={m.textScale ?? 1}
+                onChange={(e) => update({ textScale: Number(e.target.value) })}
+              />
+            </label>
+          </>
+        )}
+        <button
+          className="text-button"
+          onClick={() =>
+            update({
+              textColor: undefined,
+              backgroundColor: undefined,
+              titleScale: 1,
+              textScale: 1,
+              font: "classic",
+            })
+          }
+        >
+          Reset typography & colors
+        </button>
       </details>
       {warnings.length > 0 && (
         <div className="image-quality-note">

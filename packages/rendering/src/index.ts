@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import PDFDocument from "pdfkit";
+import { printFont } from "./fonts";
 import { Design, designSchema, dimensions } from "../../domain/src/index";
 export const hash = (s: string | Buffer) =>
   createHash("sha256").update(s).digest("hex");
@@ -25,9 +26,7 @@ export function validatePrintText(d: Design) {
     metric = new PDFDocument({ autoFirstPage: false });
   try {
     for (const line of l.lines) {
-      metric
-        .font(line.font === "serif" && !l.border ? "Times-Roman" : "Helvetica")
-        .fontSize(line.size);
+      metric.font(printFont(line.font, l.border)).fontSize(line.size);
       if (metric.widthOfString(line.text) > l.w - 36)
         throw new Error("Text overflows the print safe area; shorten it.");
     }
@@ -121,9 +120,7 @@ export async function pdf(
     doc.restore();
   }
   for (const t of l.lines) {
-    doc
-      .font(t.font === "serif" && !l.border ? "Times-Roman" : "Helvetica")
-      .fontSize(t.size * scale);
+    doc.font(printFont(t.font, l.border)).fontSize(t.size * scale);
     if (doc.widthOfString(t.text) > (l.w - 36) * scale)
       throw new Error("Text overflows the print safe area; shorten it.");
     doc

@@ -11,6 +11,7 @@ export function Artwork({
   previewUrl,
   assetEndpoint,
   inspirationWhenEmpty = false,
+  onPhotoPosition,
 }: {
   design?: Design;
   framed?: boolean;
@@ -19,6 +20,7 @@ export function Artwork({
   previewUrl?: string;
   assetEndpoint?: string;
   inspirationWhenEmpty?: boolean;
+  onPhotoPosition?: (index: number, position: { x: number; y: number }) => void;
 }) {
   const d = design || sampleDesign();
   const example = showcaseFor(d.template);
@@ -55,7 +57,13 @@ export function Artwork({
         ) : (
           <div className="art-svg">
             <div dangerouslySetInnerHTML={{ __html: svg(d) }} />
-            {d.memory && <MemoryImages design={d} endpoint={assetEndpoint} />}
+            {d.memory && (
+              <MemoryImages
+                design={d}
+                endpoint={assetEndpoint}
+                onPhotoPosition={onPhotoPosition}
+              />
+            )}
           </div>
         )}
       </div>

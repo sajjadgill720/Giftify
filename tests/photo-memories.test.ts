@@ -331,6 +331,25 @@ test("a photo purchase locks assets, saves a real raster proof, and allows audit
     audits.some((a) => a.action.startsWith("Original upload accessed:")),
   );
 });
+test("full-frame settings survive quote and order snapshots and render through the worker", async () => {
+  const d = design();
+  d.memory!.layout = "fullbleed";
+  d.memory!.font = "editorial";
+  d.memory!.titleScale = 1.6;
+  d.memory!.textColor = "#663344";
+  const q = await quote(db, a.id, d),
+    o = await orderFromQuote(db, a.id, q.id);
+  await runRender(db, o.id);
+  const record = (
+    await db.query("SELECT * FROM art.orders WHERE id=$1", [o.id])
+  ).rows[0];
+  assert.equal(record.design.memory.layout, "fullbleed");
+  assert.equal(record.design.memory.titleScale, 1.6);
+  assert.equal(record.design.memory.textColor, "#663344");
+  assert.equal(record.render_error, null);
+  assert.ok(record.proof_pdf);
+  assert.equal(record.proof_hash, hash(Buffer.from(record.proof_pdf)));
+});
 test("asset snapshots are immutable and an included names revision preserves photos while clearing approval", async () => {
   const d = design(),
     q = await quote(db, a.id, d),

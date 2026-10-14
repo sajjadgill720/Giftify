@@ -11,10 +11,25 @@ export function memoryPictures(d: Design): Picture[] {
     width = w - margin * 2,
     height = h * 0.57;
   const photos =
-    d.template === "family" || m.layout === "collage"
+    m.layout !== "fullbleed" &&
+    (d.template === "family" || m.layout === "collage")
       ? m.photos.slice(0, 4)
       : m.photos.slice(0, 1);
   const result: Picture[] = [];
+  if (m.layout === "fullbleed" && m.mode === "photo") {
+    return photos[0]
+      ? [
+          {
+            assetId: photos[0].assetId,
+            x: 0,
+            y: 0,
+            width: w,
+            height: h,
+            photo: photos[0],
+          },
+        ]
+      : [];
+  }
   if (m.mode === "place" && m.map) {
     const map = m.map;
     result.push({
@@ -74,7 +89,10 @@ export function memoryPictures(d: Design): Picture[] {
         x: margin,
         y: m.layout === "gallery" ? top + h * 0.065 : top,
         width,
-        height: m.layout === "gallery" ? height - h * 0.1 : height,
+        height:
+          m.layout === "gallery"
+            ? height - h * 0.1
+            : h * (m.photoHeight ?? 0.57),
         photo,
       });
   }
@@ -131,9 +149,17 @@ export function memoryLayout(d: Design): ArtworkLayout {
     rose: "#f4e7e2",
     sage: "#e8eee5",
     midnight: "#243648",
+    sand: "#eadbc4",
+    sky: "#e3edf2",
+    lavender: "#eae4f1",
+    charcoal: "#30332f",
   }[m.background];
-  const color = m.background === "midnight" ? "#faf6ed" : "#353932";
-  const font = m.font === "classic" ? "serif" : "sans",
+  const paper = m.backgroundColor || background;
+  const color =
+    m.textColor ||
+    (["midnight", "charcoal"].includes(m.background) ? "#faf6ed" : "#353932");
+  const font =
+      m.font === "classic" ? "serif" : m.font === "modern" ? "sans" : m.font,
     shapes: Shape[] = [];
   const rect = (
     x: number,
@@ -194,6 +220,17 @@ export function memoryLayout(d: Design): ArtworkLayout {
       }
   }
   const lines: ArtworkLayout["lines"] = [];
+  if (m.mode === "photo" && m.layout === "fullbleed")
+    return {
+      w,
+      h,
+      color,
+      background: paper,
+      shapes: [],
+      lines: [],
+      pictures,
+      border: false,
+    };
   if (m.mode === "words") {
     lines.push({ text: d.title, y: h * 0.19, size: w * 0.04, font });
     const story = wrap(m.narrative || "Your story belongs here.");
@@ -246,5 +283,31 @@ export function memoryLayout(d: Design): ArtworkLayout {
       size: w * 0.009,
       font: "sans",
     });
-  return { w, h, color, background, shapes, lines, pictures, border: false };
+  for (const line of lines) {
+    if (line.text === attribution && attribution) continue;
+    line.size *=
+      line.text === d.title ? (m.titleScale ?? 1) : (m.textScale ?? 1);
+    line.font = font;
+    if (
+      m.mode === "photo" &&
+      m.layout === "portrait" &&
+      m.photoHeight &&
+      d.template !== "pet" &&
+      line.y >= h * 0.715
+    ) {
+      const start = Math.max(0.715, m.photoHeight + 0.14);
+      line.y =
+        h * (start + ((line.y / h - 0.715) * (0.94 - start)) / (0.92 - 0.715));
+    }
+  }
+  return {
+    w,
+    h,
+    color,
+    background: paper,
+    shapes,
+    lines,
+    pictures,
+    border: false,
+  };
 }

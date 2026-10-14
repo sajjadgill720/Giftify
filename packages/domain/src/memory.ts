@@ -32,9 +32,29 @@ export const memorySchema = z
     names: z.string().trim().max(48),
     place: z.string().trim().max(64),
     age: z.number().int().min(0).max(120).optional(),
-    background: z.enum(["ivory", "rose", "sage", "midnight"]),
-    font: z.enum(["classic", "modern"]),
-    layout: z.enum(["portrait", "gallery", "collage"]),
+    background: z.enum([
+      "ivory",
+      "rose",
+      "sage",
+      "midnight",
+      "sand",
+      "sky",
+      "lavender",
+      "charcoal",
+    ]),
+    backgroundColor: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .optional(),
+    textColor: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .optional(),
+    font: z.enum(["classic", "modern", "editorial", "bold", "mono"]),
+    titleScale: z.number().min(0.75).max(2.4).optional(),
+    textScale: z.number().min(0.75).max(1.8).optional(),
+    photoHeight: z.number().min(0.4).max(0.65).optional(),
+    layout: z.enum(["portrait", "gallery", "collage", "fullbleed"]),
     marker: z.enum(["heart", "pin", "none"]),
     qualityAcknowledged: z.boolean(),
     map: z
@@ -148,6 +168,8 @@ export function defaultMemory(template: (typeof memoryTemplates)[number]) {
     background:
       template === "couple" ? "rose" : template === "pet" ? "sage" : "ivory",
     font: "classic",
+    titleScale: 1.4,
+    textScale: 1.25,
     layout: template === "family" ? "collage" : "portrait",
     marker: "heart",
     qualityAcknowledged: false,
