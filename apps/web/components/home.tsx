@@ -1,9 +1,7 @@
 import Link from "next/link";
-import { catalog, sampleDesign } from "../../../packages/domain/src/index";
-import { Artwork } from "./artwork";
+import { catalog } from "../../../packages/domain/src/index";
 import { ProductCard } from "./product-card";
 import { Icon } from "./icons";
-import { MemoryDemo } from "./memory-demo";
 import { ShowcaseFrame } from "./showcase-frame";
 import {
   memoryProfiles,
@@ -28,7 +26,7 @@ export default function Home() {
             Your favorite photo. The place you first met. The little moment that
             became everything. Turn it into something you can keep, or give.
           </p>
-          <Link href="#create-memory" className="button">
+          <Link href="/design/photo" className="button">
             Create your memory <Icon name="arrow" />
           </Link>
           <div className="hero-note">
@@ -110,33 +108,6 @@ export default function Home() {
           ))}
         </div>
       </section>
-      <MemoryDemo />
-      <section className="section memory-feature">
-        <div className="memory-feature-art">
-          <ShowcaseFrame kind="place" />
-          <p className="showcase-caption">
-            A little inspiration: Paris, where it all began.
-          </p>
-        </div>
-        <div>
-          <p className="eyebrow">COORDINATES & STORIES</p>
-          <h2>
-            A place.
-            <br />
-            <em>A whole world of meaning.</em>
-          </h2>
-          <p>
-            The first hello. The home you grew up in. The place you said yes.
-            Turn its coordinates into a beautifully personal keepsake.
-          </p>
-          <Link className="button" href="/products/coordinates">
-            Remember your place <Icon name="arrow" />
-          </Link>
-          <p className="fine-print">
-            Framed physical print · Your coordinates, names and date
-          </p>
-        </div>
-      </section>
       <section className="section collection-section">
         <div className="section-heading">
           <div>
@@ -148,9 +119,11 @@ export default function Home() {
           </Link>
         </div>
         <div className="product-grid">
-          {catalog.slice(0, 3).map((p, i) => (
-            <ProductCard key={p.id} product={p} index={i} />
-          ))}
+          {["couple", "family", "pet"]
+            .map((id) => catalog.find((p) => p.id === id)!)
+            .map((p, i) => (
+              <ProductCard key={p.id} product={p} index={i} />
+            ))}
         </div>
       </section>
       <section className="story-banner">

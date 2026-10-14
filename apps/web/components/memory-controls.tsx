@@ -11,6 +11,7 @@ import {
 import { memoryPictures } from "../../../packages/rendering/src/memory-layout";
 import { api, ApiError } from "../lib/client";
 import { Icon } from "./icons";
+import { PrintQualityExplainer } from "./print-quality-explainer";
 type Asset = { id: string; width: number; height: number };
 export function MemoryControls({
   design,
@@ -856,6 +857,7 @@ export function MemoryControls({
             Our target is 300 DPI. Below 100 DPI cannot be ordered. Try a
             smaller print or zoom out.
           </p>
+          <PrintQualityExplainer />
           <label className="checkbox-field">
             <input
               type="checkbox"

@@ -430,6 +430,20 @@ summary {
 .art-paper {
   background: #faf6ed;
 }
+.print-quality-explainer {
+  margin: 16px 0;
+  padding-top: 12px;
+  border-top: 1px solid #ddd2ae;
+}
+.print-quality-explainer summary {
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.print-quality-explainer p {
+  font-size: 12px;
+  line-height: 1.7;
+}
 .photo-manager-heading {
   display: flex;
   align-items: center;
@@ -683,7 +697,20 @@ summary {
   color: #7b7d70;
 }
 .showcase-pet .showcase-photo {
-  border-radius: 48% 48% 0 0;
+  border-radius: 0;
+}
+.showcase-pet .showcase-photo img {
+  object-fit: contain;
+  background: #faf6ed;
+}
+.showcase-family .showcase-photo img,
+.showcase-bloom .showcase-photo img {
+  object-fit: contain;
+}
+.showcase-family .showcase-wording strong,
+.showcase-bloom .showcase-wording strong,
+.showcase-couple .showcase-wording strong {
+  font-style: italic;
 }
 .showcase-birthday .showcase-paper {
   background: #f7e7e0;

@@ -4,6 +4,7 @@ import { Design } from "../../../packages/domain/src/index";
 import { cropGeometry } from "../../../packages/domain/src/memory";
 import { memoryPictures } from "../../../packages/rendering/src/memory-layout";
 import { api } from "../lib/client";
+import { PrintQualityExplainer } from "./print-quality-explainer";
 export function PhotoQualityReview({
   design,
   change,
@@ -47,6 +48,7 @@ export function PhotoQualityReview({
         DPI. Below 100 DPI cannot be ordered. You can reduce the size or zoom
         out.
       </p>
+      <PrintQualityExplainer />
       <label className="checkbox-field">
         <input
           type="checkbox"

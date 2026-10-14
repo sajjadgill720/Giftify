@@ -1,76 +1,75 @@
 import Image from "next/image";
-import favoriteMoment from "../public/images/examples/favorite-moment.png";
 import specialPlace from "../public/images/examples/special-place-paris.png";
 
 const examples = {
   chapter: [
     "chapter",
-    "Our first home",
-    "A new chapter, together",
+    "Maya & Arjun's first home",
+    "Our keys. Our next chapter.",
     "12 · 09 · 2026",
   ],
   laurel: [
     "laurel",
     "You did it, Ayesha",
-    "Every little effort led you here",
+    "A dream, a thousand late nights",
     "CLASS OF 2026",
   ],
   horizon: [
     "travel",
-    "Beyond the horizon",
-    "Our next adventure awaits",
+    "Our summer in Italy",
+    "Ayesha & Hamza · Our next adventure",
     "SUMMER · 2026",
   ],
   arch: ["photo", "Our beginning", "Ayesha & Hamza", "14 · 02 · 2026"],
   orbit: [
     "photo",
     "My whole world",
-    "Always finding my way to you",
+    "Ayesha, always my favorite person",
     "14 · 02 · 2026",
   ],
   bloom: [
     "family",
-    "Together, we grow",
-    "The people who make a home",
+    "The Khan family",
+    "The little moments we grew together",
     "OUR FAMILY · 2026",
   ],
   coordinates: [
     "place",
     "Paris, France",
-    "Where it all began",
+    "Where Ayesha & Hamza first met",
     "14 · 02 · 2026",
   ],
   photo: [
     "photo",
-    "Our Favorite Moment",
-    "Where it all began",
+    "Our favorite moment",
+    "Ayesha & Hamza · Just us, just here",
     "14 · 02 · 2026",
   ],
   couple: ["photo", "Our kind of forever", "Ayesha & Hamza", "14 · 02 · 2026"],
   family: [
     "family",
-    "Our little world",
-    "The best things happen together",
-    "THE KHAN FAMILY",
+    "The Khan family",
+    "A year of laughter & love",
+    "OUR LITTLE WORLD · 2026",
   ],
   birthday: [
     "birthday",
-    "Thirty & blooming",
-    "Here's to your next chapter",
-    "HAPPY BIRTHDAY, SARA",
+    "Sara turns thirty",
+    "A little older, a lot more loved",
+    "12 · 08 · 2026",
   ],
-  pet: ["pet", "Always by my side", "Life is better with Milo", "OUR GOOD BOY"],
+  pet: ["pet", "Spruce", "Forever by our side", "OUR FIRST HELLO · 2019"],
   travel: [
     "travel",
-    "Somewhere with you",
-    "Postcards from the Amalfi coast",
+    "Amalfi, with you",
+    "Ayesha & Hamza · The trip of a lifetime",
     "ITALY · SUMMER 2026",
   ],
   words: [
     "words",
-    "The little moments",
-    "They became our whole story",
-    "FOREVER, IN OUR WORDS",
+    "Our ordinary days",
+    "Ayesha & Hamza · They became everything",
+    "OUR STORY, SINCE 2020",
   ],
   place: ["place", "Paris, France", "Where it all began", "14 · 02 · 2026"],
 } as const;
@@ -93,12 +92,12 @@ export function ShowcaseFrame({
   finish?: "oak" | "black";
 }) {
   const [image, title, message, date] = examples[kind];
-  const supplied = (kind === "photo" || image === "place") && finish === "oak";
+  const supplied = image === "place" && finish === "oak";
   return (
     <div className={`showcase-frame showcase-${kind}`}>
       {supplied ? (
         <Image
-          src={image === "photo" ? favoriteMoment : specialPlace}
+          src={specialPlace}
           alt={
             kind === "photo"
               ? "Example oak framed sunset photo: Our Favorite Moment"
@@ -134,11 +133,15 @@ export function ShowcaseFrame({
               >
                 <Image
                   src={
-                    image === "photo"
-                      ? "/images/examples/couple.png"
-                      : image === "place"
-                        ? specialPlace
-                        : `/images/examples/${image}.png`
+                    kind === "family" || kind === "bloom"
+                      ? "/images/examples/family-collage-v2.png"
+                      : kind === "pet"
+                        ? "/images/examples/pet-watercolor.png"
+                        : image === "photo"
+                          ? "/images/examples/couple.png"
+                          : image === "place"
+                            ? specialPlace
+                            : `/images/examples/${image}.png`
                   }
                   alt=""
                   width={1024}
@@ -146,12 +149,6 @@ export function ShowcaseFrame({
                   sizes="(max-width: 700px) 70vw, 340px"
                   preload={priority}
                 />
-                {kind === "family" && (
-                  <>
-                    <span />
-                    <span />
-                  </>
-                )}
               </div>
             )}
             <div className="showcase-wording">
