@@ -10,6 +10,7 @@ export default function MyOrders() {
     [tab, setTab] = useState("orders"),
     [loading, setLoading] = useState(true),
     [error, setError] = useState("");
+  const [user, setUser] = useState<any>();
   async function load() {
     setLoading(true);
     setError("");
@@ -26,6 +27,9 @@ export default function MyOrders() {
   }
   useEffect(() => {
     void load();
+    api("auth/me")
+      .then(setUser)
+      .catch(() => {});
   }, []);
   const items = tab === "orders" ? orders : drafts;
   return (
@@ -134,9 +138,16 @@ export default function MyOrders() {
       <div className="guest-note">
         <Icon name="shield" size={19} />
         <p>
-          Your guest orders and saved designs are private to this browser’s
-          session, which lasts seven days. Keep this browser available to review
-          proofs and contact support.
+          {user ? (
+            `Signed in as ${user.email}. Your verified account can access the guest keepsakes linked to it across devices.`
+          ) : (
+            <>
+              Your guest orders and saved designs are private to this browser’s
+              seven-day session.{" "}
+              <Link href="/account">Link a verified account</Link> to keep them
+              accessible across devices.
+            </>
+          )}
         </p>
       </div>
     </section>

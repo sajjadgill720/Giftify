@@ -92,7 +92,7 @@ export function price(d: Design) {
     frame,
     shipping,
     tax: settings.tax.amount,
-    total: product + frame + shipping,
+    total: product + frame + shipping + settings.tax.amount,
     currency: settings.currency,
     priceVersion: settings.version,
     taxVersion: settings.tax.version,

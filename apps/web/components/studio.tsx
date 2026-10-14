@@ -9,6 +9,7 @@ import {
   price,
 } from "../../../packages/domain/src/index";
 import { Artwork } from "./artwork";
+import { ArtworkDialog } from "./artwork-dialog";
 import { Icon } from "./icons";
 import { api, money, ApiError } from "../lib/client";
 export default function Studio({
@@ -360,31 +361,7 @@ export default function Studio({
           </p>
         </div>
       </div>
-      {zoom && (
-        <div
-          className="modal-backdrop"
-          role="presentation"
-          onClick={() => setZoom(false)}
-        >
-          <div
-            className="preview-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Larger artwork preview"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              autoFocus
-              className="icon-button"
-              onClick={() => setZoom(false)}
-              aria-label="Close preview"
-            >
-              <Icon name="close" />
-            </button>
-            <Artwork design={design} />
-          </div>
-        </div>
-      )}
+      {zoom && <ArtworkDialog design={design} onClose={() => setZoom(false)} />}
     </section>
   );
 }

@@ -32,6 +32,13 @@ export function SiteHeader() {
           <Link href="/help">How it works</Link>
         </nav>
         <div className="header-actions">
+          <Link
+            href="/account"
+            className="icon-button account-link"
+            aria-label="My account"
+          >
+            <Icon name="person" size={20} />
+          </Link>
           <Link href="/orders" className="orders-link">
             <Icon name="bag" />
             <span>My keepsakes</span>

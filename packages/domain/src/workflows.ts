@@ -57,9 +57,32 @@ export async function createRequest(
     return (
       await tx.query(
         "INSERT INTO art.requests(id,order_id,owner_id,category,message) VALUES($1,$2,$3,$4,$5) RETURNING *",
-        [randomUUID(), orderId, owner, data.category, data.message],
+        [randomUUID(), orderId, o.owner_id, data.category, data.message],
       )
     ).rows[0];
+  });
+}
+export async function claimPurchaser(
+  db: DB,
+  ownerId: string,
+  customerId: string,
+) {
+  z.uuid().parse(customerId);
+  return scoped(db, "", "ops", async (tx) => {
+    const s = (
+      await tx.query(
+        "SELECT * FROM art.sessions WHERE id=$1 AND expires_at>now() FOR UPDATE",
+        [ownerId],
+      )
+    ).rows[0];
+    if (!s || (s.customer_id && s.customer_id !== customerId))
+      throw new Error(
+        "This purchaser session cannot be linked to this account.",
+      );
+    await tx.query("UPDATE art.sessions SET customer_id=$2 WHERE id=$1", [
+      ownerId,
+      customerId,
+    ]);
   });
 }
 export async function reviseProof(
@@ -149,13 +172,14 @@ export async function resolveRequest(
   id: string,
   response: string,
   actor: string,
+  orderId?: string,
 ) {
   const value = z.string().trim().min(8).max(1000).parse(response);
   return scoped(db, "", "ops", async (tx) => {
     const r = (
       await tx.query(
-        "UPDATE art.requests SET status='resolved',response=$2,resolved_at=now() WHERE id=$1 AND status='open' RETURNING order_id",
-        [id, value],
+        "UPDATE art.requests SET status='resolved',response=$2,resolved_at=now() WHERE id=$1 AND status='open' AND ($3::uuid IS NULL OR order_id=$3) RETURNING order_id",
+        [id, value, orderId || null],
       )
     ).rows[0];
     if (!r) throw new Error("Request unavailable.");

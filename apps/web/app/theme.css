@@ -3636,3 +3636,83 @@ tr.selected {
     transition: none !important;
   }
 }
+dialog.preview-modal {
+  border: 0;
+  margin: auto;
+  max-height: 95vh;
+}
+dialog.preview-modal::backdrop {
+  background: #17291cdf;
+}
+.account-page {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  max-width: 1400px;
+  margin: auto;
+  min-height: 760px;
+}
+.account-story {
+  background: #e7e9dd;
+  padding: 70px 11%;
+}
+.account-story h1 {
+  font-size: 54px;
+  margin: 25px 0;
+}
+.account-story > p:not(.eyebrow) {
+  max-width: 340px;
+  font-size: 12px;
+}
+.account-story > .art-frame {
+  width: 195px;
+  margin: 40px auto;
+  transform: rotate(-3deg);
+}
+.account-promise {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--olive);
+}
+.account-form {
+  padding: 50px 40px;
+  max-width: 490px;
+  width: 100%;
+  align-self: center;
+  margin: auto;
+}
+.account-form h2 {
+  font-size: 34px;
+  margin: 18px 0;
+}
+.account-form > p:not(.eyebrow) {
+  font-size: 12px;
+}
+.account-form > .button {
+  margin: 30px 0 20px;
+}
+.account-form .text-button {
+  margin-top: 20px;
+  font-size: 11px;
+}
+.account-form > .fine-print {
+  font-size: 10px;
+  margin-top: 18px;
+}
+.guest-note a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 700px) {
+  .account-page {
+    grid-template-columns: 1fr;
+    min-height: 600px;
+  }
+  .account-story {
+    display: none;
+  }
+  .account-form {
+    padding: 45px 28px;
+  }
+}

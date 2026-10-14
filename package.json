@@ -7,14 +7,16 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w apps/web",
+    "dev": "tsx scripts/dev.ts",
     "build": "npm run build -w apps/web",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "worker": "tsx apps/worker/src/index.ts",
     "smoke": "tsx scripts/smoke.ts",
-    "setup:dev": "tsx scripts/setup-dev.ts"
+    "setup:dev": "tsx scripts/setup-dev.ts",
+    "smoke:product": "tsx scripts/product-smoke.ts",
+    "doctor": "tsx scripts/doctor.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.8",

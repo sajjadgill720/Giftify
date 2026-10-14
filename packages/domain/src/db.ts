@@ -12,6 +12,7 @@ try {
   process.loadEnvFile(path.join(root, ".env"));
 } catch {}
 export interface DB {
+  customerId?: string;
   query<T = Record<string, any>>(
     sql: string,
     args?: any[],
@@ -20,9 +21,11 @@ export interface DB {
   transaction<T>(fn: (db: DB) => Promise<T>): Promise<T>;
   close(): Promise<any>;
 }
-let singleton: Promise<DB> | undefined;
+const state = globalThis as typeof globalThis & {
+  keepsakeDatabase?: Promise<DB>;
+};
 export async function database(): Promise<DB> {
-  return (singleton ??= connect());
+  return (state.keepsakeDatabase ??= connect());
 }
 async function connect(): Promise<DB> {
   if (process.env.DATABASE_URL) {
@@ -82,9 +85,18 @@ export async function scoped<T>(
   return db.transaction(async (tx) => {
     await tx.exec("SET LOCAL ROLE art_app");
     await tx.query(
-      "SELECT set_config('art.owner',$1,true),set_config('art.role',$2,true)",
-      [owner, role],
+      "SELECT set_config('art.owner',$1,true),set_config('art.role',$2,true),set_config('art.customer',$3,true)",
+      [owner, role, db.customerId || ""],
     );
     return fn(tx);
   });
+}
+export function withCustomer(db: DB, customerId: string): DB {
+  return {
+    customerId,
+    query: (sql, args) => db.query(sql, args),
+    exec: (sql) => db.exec(sql),
+    transaction: (fn) => db.transaction(fn),
+    close: () => db.close(),
+  };
 }

@@ -1,0 +1,25 @@
+ALTER TABLE art.sessions ADD COLUMN customer_id uuid;
+CREATE INDEX customer_sessions ON art.sessions(customer_id) WHERE customer_id IS NOT NULL;
+DROP POLICY guest_session ON art.sessions;
+CREATE POLICY guest_session ON art.sessions FOR SELECT TO art_app USING(id::text=current_setting('art.owner',true) OR customer_id::text=current_setting('art.customer',true));
+DROP POLICY guest_quotes ON art.quotes;
+CREATE POLICY guest_quotes ON art.quotes TO art_app USING(owner_id::text=current_setting('art.owner',true) OR owner_id IN(SELECT id FROM art.sessions WHERE customer_id::text=current_setting('art.customer',true))) WITH CHECK(owner_id::text=current_setting('art.owner',true) OR owner_id IN(SELECT id FROM art.sessions WHERE customer_id::text=current_setting('art.customer',true)));
+DROP POLICY guest_orders ON art.orders;
+CREATE POLICY guest_orders ON art.orders TO art_app USING(owner_id::text=current_setting('art.owner',true) OR owner_id IN(SELECT id FROM art.sessions WHERE customer_id::text=current_setting('art.customer',true))) WITH CHECK(owner_id::text=current_setting('art.owner',true) OR owner_id IN(SELECT id FROM art.sessions WHERE customer_id::text=current_setting('art.customer',true)));
+DROP POLICY own_drafts ON art.drafts;
+CREATE POLICY own_drafts ON art.drafts TO art_app USING(owner_id::text=current_setting('art.owner',true) OR owner_id IN(SELECT id FROM art.sessions WHERE customer_id::text=current_setting('art.customer',true))) WITH CHECK(owner_id::text=current_setting('art.owner',true) OR owner_id IN(SELECT id FROM art.sessions WHERE customer_id::text=current_setting('art.customer',true)));
+DROP POLICY own_requests_read ON art.requests;
+CREATE POLICY own_requests_read ON art.requests FOR SELECT TO art_app USING(EXISTS(SELECT 1 FROM art.orders o WHERE o.id=order_id));
+DROP POLICY own_requests_create ON art.requests;
+CREATE POLICY own_requests_create ON art.requests FOR INSERT TO art_app WITH CHECK(status='open' AND response IS NULL AND EXISTS(SELECT 1 FROM art.orders o WHERE o.id=order_id));
+DROP POLICY guest_render ON art.jobs;
+CREATE POLICY guest_render ON art.jobs FOR INSERT TO art_app WITH CHECK(kind='render' AND EXISTS(SELECT 1 FROM art.orders o WHERE o.id=order_id));
+DROP POLICY guest_audit ON art.audit;
+CREATE POLICY guest_audit ON art.audit FOR INSERT TO art_app WITH CHECK(actor=current_setting('art.owner',true) AND EXISTS(SELECT 1 FROM art.orders o WHERE o.id=order_id));
+DROP POLICY own_audit ON art.audit;
+CREATE POLICY own_audit ON art.audit FOR SELECT TO art_app USING(EXISTS(SELECT 1 FROM art.orders o WHERE o.id=order_id));
+CREATE FUNCTION art.lock_session_owner() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN
+ IF OLD.customer_id IS NOT NULL AND NEW.customer_id IS DISTINCT FROM OLD.customer_id THEN RAISE EXCEPTION 'A claimed purchaser cannot move to another account';END IF;
+ RETURN NEW;
+END$$;
+CREATE TRIGGER lock_session_owner BEFORE UPDATE ON art.sessions FOR EACH ROW EXECUTE FUNCTION art.lock_session_owner();

@@ -6,7 +6,12 @@ export class ApiError extends Error {
     super(data.error || "Something went wrong. Please try again.");
   }
 }
-export async function api<T = any>(path: string, body?: unknown): Promise<T> {
+let refreshing: Promise<boolean> | undefined;
+export async function api<T = any>(
+  path: string,
+  body?: unknown,
+  retry = true,
+): Promise<T> {
   const r = await fetch("/api/" + path, {
     method: body === undefined ? "GET" : "POST",
     headers:
@@ -18,6 +23,24 @@ export async function api<T = any>(path: string, body?: unknown): Promise<T> {
     data = await r.json();
   } catch {
     throw new Error("The server could not respond. Please try again.");
+  }
+  if (
+    r.status === 401 &&
+    retry &&
+    !path.startsWith("ops/") &&
+    !path.startsWith("auth/")
+  ) {
+    refreshing ??= fetch("/api/auth/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    })
+      .then((r) => r.ok)
+      .catch(() => false)
+      .finally(() => {
+        refreshing = undefined;
+      });
+    if (await refreshing) return api<T>(path, body, false);
   }
   if (!r.ok) throw new ApiError(data, r.status);
   return data;

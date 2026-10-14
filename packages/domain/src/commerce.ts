@@ -8,7 +8,7 @@ export async function newSession(db: DB) {
     token = randomBytes(32).toString("hex");
   await scoped(db, "", "ops", (tx) =>
     tx.query(
-      "INSERT INTO art.sessions VALUES ($1,$2,now()+interval '7 days')",
+      "INSERT INTO art.sessions(id,token_hash,expires_at) VALUES ($1,$2,now()+interval '7 days')",
       [id, hash(token)],
     ),
   );
@@ -17,8 +17,8 @@ export async function newSession(db: DB) {
 export async function owner(db: DB, token: string) {
   const r = await scoped(db, "", "ops", (tx) =>
     tx.query<{ id: string }>(
-      "SELECT id FROM art.sessions WHERE token_hash=$1 AND expires_at>now()",
-      [hash(token)],
+      "SELECT id FROM art.sessions WHERE token_hash=$1 AND expires_at>now() AND (customer_id IS NULL OR customer_id::text=$2)",
+      [hash(token), db.customerId || ""],
     ),
   );
   if (!r.rows[0]) throw new Error("Purchaser session expired.");
@@ -53,7 +53,7 @@ export async function orderFromQuote(db: DB, ownerId: string, quoteId: string) {
     const id = randomUUID();
     const r = await tx.query(
       "INSERT INTO art.orders(id,owner_id,quote_id,design,design_hash,price) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT(quote_id) DO NOTHING RETURNING *",
-      [id, ownerId, q.id, q.design, q.design_hash, q.price],
+      [id, q.owner_id, q.id, q.design, q.design_hash, q.price],
     );
     const o =
       r.rows[0] ||
@@ -180,7 +180,7 @@ export async function release(db: DB, id: string, actor = "ops") {
     );
   });
 }
-export async function runRender(db: DB) {
+export async function runRender(db: DB, orderId?: string) {
   const token = randomUUID();
   const job = await scoped(db, "", "ops", async (tx) => {
     await tx.query(
@@ -188,7 +188,8 @@ export async function runRender(db: DB) {
     );
     const j = (
       await tx.query(
-        "SELECT * FROM art.jobs WHERE kind='render' AND attempts<3 AND (status='pending' OR (status='running' AND lease_until<now())) ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1",
+        "SELECT * FROM art.jobs WHERE kind='render' AND attempts<3 AND (status='pending' OR (status='running' AND lease_until<now())) AND ($1::uuid IS NULL OR order_id=$1) ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1",
+        [orderId || null],
       )
     ).rows[0];
     if (!j) return;

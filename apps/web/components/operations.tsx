@@ -481,6 +481,18 @@ function OrderWorkbench({
       delivered: [],
       returned: [],
     };
+  useEffect(() => {
+    setEvidence("");
+  }, [o.production]);
+  useEffect(() => {
+    setShipment((s) => ({
+      ...s,
+      carrier: o.shipment?.carrier || s.carrier,
+      reference: o.shipment?.reference || s.reference,
+      state: shipmentNext[o.fulfillment]?.[0] || "",
+      evidence: "",
+    }));
+  }, [o.fulfillment, o.shipment?.reference]);
   const openRevision = o.requests?.find(
     (r: any) => r.category === "revision" && r.status === "open",
   );

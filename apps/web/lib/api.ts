@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { database, migrate, scoped, DB } from "../../../packages/domain/src/db";
+import {
+  database,
+  migrate,
+  scoped,
+  DB,
+  withCustomer,
+} from "../../../packages/domain/src/db";
 import {
   newSession,
   owner,
@@ -21,6 +27,7 @@ import {
   resolveRequest,
   advanceProduction,
   recordShipment,
+  claimPurchaser,
 } from "../../../packages/domain/src/workflows";
 import {
   enqueueVerifiedEvent,
@@ -33,6 +40,10 @@ import {
   validLocalCredential,
   signInOperator,
   verifyOperator,
+  verifyCustomer,
+  signInCustomer,
+  signUpCustomer,
+  refreshCustomer,
 } from "../../../packages/integrations/src/auth";
 import {
   createCheckout,
@@ -179,7 +190,7 @@ export async function handle(
   context: { params: Promise<{ path: string[] }> },
 ) {
   try {
-    const db = await database();
+    let db = await database();
     await (initialized ??= process.env.DATABASE_URL
       ? Promise.resolve()
       : migrate(db));
@@ -209,7 +220,98 @@ export async function handle(
         operationsMode: authConfigured() ? "supabase" : "local",
         storageReady: !!process.env.SUPABASE_STORAGE_BUCKET,
         printLanguage: "English",
+        accountsReady: authConfigured(),
       });
+    if (route.startsWith("auth/")) {
+      if (limit("consumer-auth", 30))
+        return json(
+          { error: "Too many authentication attempts. Try again shortly." },
+          429,
+        );
+      if (route === "auth/sign-out" && post) {
+        const guest = req.cookies.get("purchaser")?.value;
+        if (guest)
+          await scoped(db, "", "ops", (tx) =>
+            tx.query(
+              "UPDATE art.sessions SET expires_at=now() WHERE token_hash=$1",
+              [hash(guest)],
+            ),
+          );
+        const r = json({ signedOut: true });
+        for (const [name, path] of [
+          ["customer_auth", "/api"],
+          ["customer_refresh", "/api/auth"],
+          ["purchaser", "/"],
+        ])
+          r.cookies.set(name, "", { path, maxAge: 0 });
+        return r;
+      }
+      if (!authConfigured())
+        return json(
+          {
+            error:
+              "Account sign-in requires the project’s Supabase configuration.",
+          },
+          503,
+        );
+      if (route === "auth/me" && !post) {
+        const token = req.cookies.get("customer_auth")?.value;
+        if (!token)
+          return json({ error: "Consumer authentication required." }, 401);
+        return json(await verifyCustomer(token));
+      }
+      let session: any;
+      if (route === "auth/refresh" && post) {
+        const refresh = req.cookies.get("customer_refresh")?.value;
+        if (!refresh)
+          return json({ error: "Consumer authentication required." }, 401);
+        session = await refreshCustomer(refresh);
+      } else if (
+        (route === "auth/sign-in" || route === "auth/sign-up") &&
+        post
+      ) {
+        const data = z
+          .object({
+            email: z.email().max(254),
+            password: z
+              .string()
+              .min(route === "auth/sign-up" ? 12 : 1)
+              .max(200),
+          })
+          .strict()
+          .parse(body);
+        if (route === "auth/sign-up") {
+          const created = await signUpCustomer(data.email, data.password);
+          if (!created.session) return json({ requiresConfirmation: true });
+          session = created.session;
+        } else session = await signInCustomer(data.email, data.password);
+      } else return json({ error: "Not found." }, 404);
+      const user = await verifyCustomer(session.access_token);
+      const guest = req.cookies.get("purchaser")?.value;
+      let guestOwner: string | undefined;
+      if (guest)
+        try {
+          guestOwner = await owner(withCustomer(db, user.id), guest);
+        } catch {}
+      if (guestOwner) await claimPurchaser(db, guestOwner, user.id);
+      const r = json(user);
+      const secure = req.nextUrl.protocol === "https:";
+      r.cookies.set("customer_auth", session.access_token, {
+        httpOnly: true,
+        secure,
+        sameSite: "lax",
+        path: "/api",
+        maxAge: session.expires_in || 3600,
+      });
+      r.cookies.set("customer_refresh", session.refresh_token, {
+        httpOnly: true,
+        secure,
+        sameSite: "strict",
+        path: "/api/auth",
+        maxAge: 2419200,
+      });
+      return r;
+    }
     if (route === "webhooks/payments" && post) {
       const event = verifyWebhook(raw, req.headers.get("x-sfpy-signature"));
       if (event.merchant_api_key !== process.env.SAFEPAY_PUBLIC_KEY)
@@ -355,7 +457,7 @@ export async function handle(
               break;
             case "revise":
               await reviseProof(db, oid, body.design, actor);
-              if (!process.env.DATABASE_URL) await runRender(db);
+              if (!process.env.DATABASE_URL) await runRender(db, oid);
               break;
             case "production":
               await advanceProduction(
@@ -375,6 +477,7 @@ export async function handle(
                 z.uuid().parse(body.requestId),
                 body.response,
                 actor,
+                oid,
               );
               break;
             case "retry-render":
@@ -390,7 +493,7 @@ export async function handle(
                   [oid, actor, "Render retry requested"],
                 );
               });
-              if (!process.env.DATABASE_URL) await runRender(db);
+              if (!process.env.DATABASE_URL) await runRender(db, oid);
               break;
             case "recover-checkout": {
               const tracker = z
@@ -435,15 +538,24 @@ export async function handle(
       }
       return json({ error: "Not found." }, 404);
     }
+    let customer: { id: string; email?: string } | undefined;
+    const account = req.cookies.get("customer_auth")?.value;
+    if (account) {
+      customer = await verifyCustomer(account);
+      db = withCustomer(db, customer.id);
+    }
     if (route === "session" && post) {
       if (limit("sessions", 60))
         return json({ error: "Too many sessions. Try again shortly." }, 429);
       const token = req.cookies.get("purchaser")?.value;
       if (token)
         try {
-          return json({ id: await owner(db, token) });
+          const id = await owner(db, token);
+          if (customer) await claimPurchaser(db, id, customer.id);
+          return json({ id, account: !!customer });
         } catch {}
       const session = await newSession(db);
+      if (customer) await claimPurchaser(db, session.id, customer.id);
       const r = json({ id: session.id });
       r.cookies.set("purchaser", session.token, {
         httpOnly: true,
@@ -458,7 +570,7 @@ export async function handle(
     if (!token)
       return json({ error: "Start a purchaser session to continue." }, 401);
     const id = await owner(db, token);
-    if (limit(id, 120))
+    if (limit(db.customerId || id, 120))
       return json({ error: "Too many requests. Try again shortly." }, 429);
     if (route === "drafts" && !post)
       return json(
@@ -530,7 +642,10 @@ export async function handle(
       return q ? json(q) : json({ error: "Quote unavailable." }, 404);
     }
     if (route === "checkouts" && post) {
-      const address = addressSchema.parse(body.address);
+      const { address } = z
+        .object({ quoteId: z.uuid(), address: addressSchema })
+        .strict()
+        .parse(body);
       let o = await orderFromQuote(db, id, z.uuid().parse(body.quoteId));
       if (!o.address)
         await scoped(db, id, "guest", (tx) =>
@@ -539,7 +654,7 @@ export async function handle(
             [o.id, address],
           ),
         );
-      if (!process.env.DATABASE_URL) await runRender(db);
+      if (!process.env.DATABASE_URL) await runRender(db, o.id);
       o = await scoped(
         db,
         id,
@@ -552,8 +667,7 @@ export async function handle(
     }
     if (path[0] === "orders" && path[1]) {
       const oid = z.uuid().parse(path[1]);
-      if (!process.env.DATABASE_URL) await runPaymentInbox(db, oid);
-      const o = await scoped(
+      let o = await scoped(
         db,
         id,
         "guest",
@@ -562,6 +676,17 @@ export async function handle(
             .rows[0],
       );
       if (!o) return json({ error: "Order unavailable." }, 404);
+      if (!process.env.DATABASE_URL) {
+        await runPaymentInbox(db, oid);
+        o = await scoped(
+          db,
+          id,
+          "guest",
+          async (tx) =>
+            (await tx.query("SELECT * FROM art.orders WHERE id=$1", [oid]))
+              .rows[0],
+        );
+      }
       if (post) {
         if (path[2] === "approve-proof") {
           await approve(db, id, oid, z.string().length(64).parse(body.hash));

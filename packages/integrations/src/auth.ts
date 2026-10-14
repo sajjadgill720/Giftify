@@ -67,3 +67,42 @@ export async function verifyOperator(token: string) {
     );
   return data.user.id;
 }
+export async function verifyCustomer(token: string) {
+  const { data, error } = await client().auth.getUser(token);
+  if (error || !data.user || !data.user.email_confirmed_at)
+    throw new Error("Consumer authentication required.");
+  return { id: data.user.id, email: data.user.email };
+}
+export async function signInCustomer(email: string, password: string) {
+  const { data, error } = await client().auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (error || !data.session)
+    throw new Error("Sign-in failed. Check your email and password.");
+  await verifyCustomer(data.session.access_token);
+  return data.session;
+}
+export async function signUpCustomer(email: string, password: string) {
+  const { data, error } = await client().auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo:
+        (process.env.APP_URL || "http://localhost:3000") + "/account",
+    },
+  });
+  if (error)
+    throw new Error(
+      "Account setup could not be completed. Check your details and try again.",
+    );
+  return data;
+}
+export async function refreshCustomer(refreshToken: string) {
+  const { data, error } = await client().auth.refreshSession({
+    refresh_token: refreshToken,
+  });
+  if (error || !data.session)
+    throw new Error("Consumer authentication required.");
+  return data.session;
+}

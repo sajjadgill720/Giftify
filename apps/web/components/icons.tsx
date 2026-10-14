@@ -8,6 +8,12 @@ export function Icon({
   className?: string;
 }) {
   const paths: Record<string, React.ReactNode> = {
+    person: (
+      <>
+        <circle cx="12" cy="7" r="4" />
+        <path d="M4 21v-3a8 8 0 0 1 16 0v3" />
+      </>
+    ),
     arrow: (
       <>
         <path d="M5 12h14m-5-5 5 5-5 5" />
