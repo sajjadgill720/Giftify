@@ -261,7 +261,10 @@ export default function OrderDetail({ id }: { id: string }) {
                       className="button"
                       disabled={!reviewed || !!busy}
                       onClick={() =>
-                        action("approve-proof", { hash: o.proof_hash })
+                        action("approve-proof", {
+                          hash: o.proof_hash,
+                          revision: o.proof_revision,
+                        })
                       }
                     >
                       {busy === "approve-proof"

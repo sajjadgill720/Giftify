@@ -70,8 +70,12 @@ assert.equal(
   400,
 );
 assert.equal(
-  (await call(`orders/${id}/approve-proof`, { hash: order.data.proof_hash })).r
-    .status,
+  (
+    await call(`orders/${id}/approve-proof`, {
+      hash: order.data.proof_hash,
+      revision: order.data.proof_revision,
+    })
+  ).r.status,
   200,
 );
 const savedCookie = cookie;

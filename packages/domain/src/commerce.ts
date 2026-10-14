@@ -71,15 +71,21 @@ export async function approve(
   ownerId: string,
   id: string,
   proofHash: string,
+  expectedRevision?: number,
 ) {
   return scoped(db, ownerId, "guest", async (tx) => {
     const o = (
       await tx.query("SELECT * FROM art.orders WHERE id=$1 FOR UPDATE", [id])
     ).rows[0];
-    if (!o || !o.proof_hash || o.proof_hash !== proofHash)
+    if (
+      !o ||
+      !o.proof_hash ||
+      o.proof_hash !== proofHash ||
+      (expectedRevision !== undefined && expectedRevision !== o.proof_revision)
+    )
       throw new Error("Proof changed or is not ready. Review the current PDF.");
     await tx.query(
-      "UPDATE art.orders SET approved_hash=proof_hash WHERE id=$1",
+      "UPDATE art.orders SET approved_hash=proof_hash,approved_revision=proof_revision WHERE id=$1",
       [id],
     );
     await tx.query(

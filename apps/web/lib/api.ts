@@ -689,7 +689,13 @@ export async function handle(
       }
       if (post) {
         if (path[2] === "approve-proof") {
-          await approve(db, id, oid, z.string().length(64).parse(body.hash));
+          await approve(
+            db,
+            id,
+            oid,
+            z.string().length(64).parse(body.hash),
+            z.number().int().min(0).max(1).parse(body.revision),
+          );
           return json({ approved: true });
         }
         if (path[2] === "requests")

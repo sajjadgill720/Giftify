@@ -12,7 +12,7 @@ export default function Privacy() {
         },
         {
           title: "Who can access my order?",
-          text: "Your browser receives an HttpOnly purchaser cookie. Its access token is hashed in the database and expires after seven days. Ownership policies restrict access to your records. Authenticated operations staff can access orders to review proofs and handle production and support.",
+          text: "Your browser receives an HttpOnly purchaser cookie. Its access token is hashed in the database and expires after seven days. A verified account can link a current guest session. After linking, standalone guest access is disabled and account ownership policies govern cross-device access. Access/refresh tokens stay in HttpOnly cookies. Authenticated operations staff can access orders to review proofs and handle production and support.",
         },
         {
           title: "Where are drafts and proofs stored?",

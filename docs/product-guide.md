@@ -21,7 +21,7 @@ In production, development credentials are rejected. Configure Supabase users wi
 - Safepay: SAFEPAY_SECRET_KEY, SAFEPAY_PUBLIC_KEY, SAFEPAY_WEBHOOK_SECRET, PAYMENT_MODE=sandbox, public HTTPS APP_URL and subscribed version 2.0.0 payment events. Live endpoints remain disabled. Webhooks persist to a durable inbox; the external worker performs reconciliation. Local order reads process that order's inbox in embedded development mode.
 - Supabase Auth: SUPABASE_URL and SUPABASE_ANON_KEY, reviewed redirect URLs, email confirmation/SMTP and named operations MFA/roles. No credentialed authentication has been claimed as verified.
 - Private proof mirror: SUPABASE_SERVICE_ROLE_KEY and SUPABASE_STORAGE_BUCKET; bucket must be private. The key is server-only and uploads use checksum-derived keys without accepting arbitrary URLs.
-- PostgreSQL: separate runtime DATABASE_URL and privileged MIGRATION_DATABASE_URL. Apply migrations 001–005 with `npm run db:migrate`, then run web and `npm run worker` separately. Development may use one persistent PGlite process; do not run another process on the same directory concurrently.
+- PostgreSQL: separate runtime DATABASE_URL and privileged MIGRATION_DATABASE_URL. Apply migrations 001–006 with `npm run db:migrate`, then run web and `npm run worker` separately. Development may use one persistent PGlite process; do not run another process on the same directory concurrently.
 
 `npm run doctor` reports environment-variable presence only, without secrets. It does not certify provider acceptance or launch readiness.
 

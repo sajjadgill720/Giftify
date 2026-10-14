@@ -24,7 +24,7 @@ export default function Help() {
         },
         {
           title: "Where are my orders and drafts?",
-          text: "My keepsakes lists the orders and drafts belonging to your current guest session. Guest access is private to the browser where you placed the order and expires after seven days. Named consumer accounts and cross-device claiming remain a future milestone.",
+          text: "My keepsakes lists the orders and drafts belonging to your current guest session. Guest access is private to the browser where you placed the order and expires after seven days. A configured verified account can link your current guest keepsakes and access them across devices. Account sign-in requires Supabase configuration.",
         },
         {
           title: "How do I get help or request a refund?",

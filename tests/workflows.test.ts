@@ -81,7 +81,15 @@ test("six distinct versioned artworks export exact A4 and A3 proofs; legacy art 
   for (const p of catalog)
     for (const size of ["A4", "A3"] as const) {
       const d = { ...sampleDesign(p.id), size };
-      outputs.add(hash(await pdf(d)));
+      const bytes = await pdf(d);
+      outputs.add(hash(bytes));
+      const box = /\/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/.exec(
+        bytes.toString("latin1"),
+      );
+      assert.ok(box);
+      const expected = size === "A4" ? [595.276, 841.89] : [841.89, 1190.551];
+      assert.ok(Math.abs(Number(box[1]) - expected[0]) < 0.01);
+      assert.ok(Math.abs(Number(box[2]) - expected[1]) < 0.01);
       assert.ok(
         svg(d).includes(size === "A4" ? 'width="210mm"' : 'width="297mm"'),
       );
@@ -383,4 +391,28 @@ test("operations cookie tokens are hashed and expiring; local credentials are re
   assert.equal(validLocalCredential(process.env.OPS_TOKEN || ""), false);
   if (previous === undefined) delete env.NODE_ENV;
   else env.NODE_ENV = previous;
+});
+test("stale proof version cannot approve a revision even when the PDF bytes are identical", async () => {
+  const o = await make();
+  await approve(db, a.id, o.id, o.proof_hash, 0);
+  await createRequest(db, a.id, o.id, {
+    category: "revision",
+    message: "Please prepare the same wording again for review.",
+  });
+  await reviseProof(db, o.id, o.design, "ops");
+  while (await runRender(db)) {}
+  const revised = (
+    await db.query("SELECT * FROM art.orders WHERE id=$1", [o.id])
+  ).rows[0];
+  assert.equal(revised.proof_hash, o.proof_hash);
+  await assert.rejects(approve(db, a.id, o.id, o.proof_hash, 0));
+  await approve(db, a.id, o.id, o.proof_hash, 1);
+  assert.equal(
+    (
+      await db.query("SELECT approved_revision FROM art.orders WHERE id=$1", [
+        o.id,
+      ])
+    ).rows[0].approved_revision,
+    1,
+  );
 });

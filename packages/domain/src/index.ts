@@ -118,6 +118,7 @@ export function eligible(o: Record<string, unknown>) {
     o.payment === "captured" &&
     !!o.proof_hash &&
     o.approved_hash === o.proof_hash &&
+    o.approved_revision === o.proof_revision &&
     o.production === "blocked"
   );
 }

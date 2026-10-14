@@ -72,8 +72,12 @@ const original = (await call("orders/" + id)).data;
 assert.equal(original.payment, "pending");
 assert.ok(original.proof_hash);
 assert.equal(
-  (await call(`orders/${id}/approve-proof`, { hash: original.proof_hash }))
-    .status,
+  (
+    await call(`orders/${id}/approve-proof`, {
+      hash: original.proof_hash,
+      revision: original.proof_revision,
+    })
+  ).status,
   200,
 );
 const request = await call(`orders/${id}/requests`, {
@@ -121,13 +125,21 @@ assert.equal(revised.design.title, design.title);
 assert.equal(revised.proof_design.title, "Revised smoke fixture");
 assert.equal(revised.requests[0].status, "resolved");
 assert.equal(
-  (await call(`orders/${id}/approve-proof`, { hash: original.proof_hash }))
-    .status,
+  (
+    await call(`orders/${id}/approve-proof`, {
+      hash: original.proof_hash,
+      revision: original.proof_revision,
+    })
+  ).status,
   400,
 );
 assert.equal(
-  (await call(`orders/${id}/approve-proof`, { hash: revised.proof_hash }))
-    .status,
+  (
+    await call(`orders/${id}/approve-proof`, {
+      hash: revised.proof_hash,
+      revision: revised.proof_revision,
+    })
+  ).status,
   200,
 );
 cookie = operator;

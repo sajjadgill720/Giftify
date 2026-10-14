@@ -3716,3 +3716,14 @@ dialog.preview-modal::backdrop {
     padding: 45px 28px;
   }
 }
+@media (max-width: 700px) {
+  .field > input,
+  .field > select,
+  .field > textarea,
+  .search-field input,
+  .workbench-section .field > input,
+  .workbench-section .field > select,
+  .workbench-section .field > textarea {
+    font-size: 16px;
+  }
+}
