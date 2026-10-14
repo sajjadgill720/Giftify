@@ -1,5 +1,6 @@
 import { database } from "../../../packages/domain/src/db";
 import { runRender } from "../../../packages/domain/src/commerce";
+import { runPaymentInbox } from "../../../packages/domain/src/payment-inbox";
 const db = await database();
 console.log("Render worker started; no supplier or shipment side effects.");
 if (!process.env.DATABASE_URL)
@@ -9,6 +10,8 @@ if (!process.env.DATABASE_URL)
 let running = true;
 process.on("SIGINT", () => (running = false));
 while (running) {
-  if (!(await runRender(db))) await new Promise((r) => setTimeout(r, 1000));
+  const payment = await runPaymentInbox(db),
+    render = await runRender(db);
+  if (!payment && !render) await new Promise((r) => setTimeout(r, 1000));
 }
 await db.close();

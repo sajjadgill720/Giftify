@@ -5,12 +5,16 @@ export const hash = (s: string | Buffer) =>
   createHash("sha256").update(s).digest("hex");
 export function canonical(d: Design) {
   const v = designSchema.parse(d);
-  return JSON.stringify({ version: 1, ...v });
+  return JSON.stringify({ version: v.version || 1, ...v });
 }
 import { layout } from "./representation";
 export { svg } from "./representation";
 export async function pdf(d: Design): Promise<Buffer> {
-  if (Object.values(d).some((v) => /[^\x20-\x7e]/.test(v)))
+  if (
+    Object.values(d).some(
+      (v) => typeof v === "string" && /[^\x20-\x7e]/.test(v),
+    )
+  )
     throw new Error(
       "Bilingual print export awaits licensed embedded fonts and shaping validation. Preview only.",
     );
@@ -32,20 +36,25 @@ export async function pdf(d: Design): Promise<Buffer> {
     doc.on("error", reject);
   });
   doc.rect(0, 0, l.w * scale, l.h * scale).fill("#faf6ed");
-  doc
-    .rect(12 * scale, 12 * scale, (l.w - 24) * scale, (l.h - 24) * scale)
-    .lineWidth(0.5 * scale)
-    .stroke(l.color);
-  doc.circle((l.w / 2) * scale, l.h * 0.28 * scale, 15 * scale).stroke(l.color);
-  doc
-    .moveTo((l.w / 2 - 8) * scale, l.h * 0.28 * scale)
-    .lineTo((l.w / 2) * scale, (l.h * 0.28 - 8) * scale)
-    .lineTo((l.w / 2 + 8) * scale, l.h * 0.28 * scale)
-    .lineTo((l.w / 2) * scale, (l.h * 0.28 + 8) * scale)
-    .closePath()
-    .fill(l.color);
+  if (l.border)
+    doc
+      .rect(12 * scale, 12 * scale, (l.w - 24) * scale, (l.h - 24) * scale)
+      .lineWidth(0.5 * scale)
+      .stroke(l.color);
+  doc.save().scale(scale);
+  for (const shape of l.shapes) {
+    doc.lineWidth(shape.width || 0.45);
+    if ("path" in shape) doc.path(shape.path);
+    else doc.circle(...shape.circle);
+    if (shape.fill && shape.stroke) doc.fillAndStroke(shape.fill, shape.stroke);
+    else if (shape.fill) doc.fill(shape.fill);
+    else if (shape.stroke) doc.stroke(shape.stroke);
+  }
+  doc.restore();
   for (const t of l.lines) {
-    doc.font("Helvetica").fontSize(t.size * scale);
+    doc
+      .font(t.font === "serif" && !l.border ? "Times-Roman" : "Helvetica")
+      .fontSize(t.size * scale);
     if (doc.widthOfString(t.text) > (l.w - 36) * scale)
       throw new Error("Text overflows the print safe area; shorten it.");
     doc

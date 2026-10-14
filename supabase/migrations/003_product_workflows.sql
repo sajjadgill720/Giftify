@@ -1,0 +1,35 @@
+ALTER TABLE art.orders ADD COLUMN proof_design jsonb;
+ALTER TABLE art.orders ADD COLUMN proof_revision int NOT NULL DEFAULT 0 CHECK(proof_revision BETWEEN 0 AND 1);
+ALTER TABLE art.orders ADD COLUMN proof_storage_key text;
+ALTER TABLE art.orders ADD COLUMN ops_owner text;
+ALTER TABLE art.orders ADD COLUMN due_at timestamptz;
+ALTER TABLE art.orders ADD COLUMN shipment jsonb;
+ALTER TABLE art.orders DROP CONSTRAINT orders_production_check;
+ALTER TABLE art.orders ADD CONSTRAINT orders_production_check CHECK(production IN ('blocked','queued','printing','qa','ready','hold'));
+CREATE TABLE art.drafts(id uuid PRIMARY KEY,owner_id uuid NOT NULL REFERENCES art.sessions,design jsonb NOT NULL,updated_at timestamptz NOT NULL DEFAULT now(),archived boolean NOT NULL DEFAULT false);
+CREATE TABLE art.requests(id uuid PRIMARY KEY,order_id uuid NOT NULL,owner_id uuid NOT NULL,category text NOT NULL CHECK(category IN ('revision','delivery','refund','other')),message text NOT NULL,status text NOT NULL DEFAULT 'open' CHECK(status IN ('open','resolved')),response text,created_at timestamptz NOT NULL DEFAULT now(),resolved_at timestamptz,FOREIGN KEY(order_id,owner_id) REFERENCES art.orders(id,owner_id));
+CREATE TABLE art.ops_sessions(token_hash text PRIMARY KEY,actor text NOT NULL,expires_at timestamptz NOT NULL);
+CREATE TABLE art.proof_history(order_id uuid NOT NULL REFERENCES art.orders,revision int NOT NULL,design jsonb NOT NULL,hash text NOT NULL,pdf bytea NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(order_id,revision));
+CREATE TABLE art.payment_inbox(id text PRIMARY KEY,order_id uuid NOT NULL REFERENCES art.orders,payload jsonb NOT NULL,status text NOT NULL DEFAULT 'pending',attempts int NOT NULL DEFAULT 0,lease_until timestamptz,lease_token uuid,error text,created_at timestamptz NOT NULL DEFAULT now());
+CREATE UNIQUE INDEX one_open_request ON art.requests(order_id,category) WHERE status='open';
+INSERT INTO art.proof_history(order_id,revision,design,hash,pdf) SELECT id,0,design,proof_hash,proof_pdf FROM art.orders WHERE proof_hash IS NOT NULL AND proof_pdf IS NOT NULL;
+GRANT SELECT,INSERT,UPDATE ON art.drafts,art.requests,art.ops_sessions,art.payment_inbox TO art_app;
+GRANT SELECT,INSERT ON art.proof_history TO art_app;
+DO $$DECLARE t text;BEGIN FOREACH t IN ARRAY ARRAY['drafts','requests','ops_sessions','proof_history','payment_inbox'] LOOP
+ EXECUTE format('ALTER TABLE art.%I ENABLE ROW LEVEL SECURITY',t);
+ EXECUTE format('CREATE POLICY ops ON art.%I TO art_app USING(current_setting(''art.role'',true)=''ops'') WITH CHECK(current_setting(''art.role'',true)=''ops'')',t);
+END LOOP;END$$;
+CREATE POLICY own_drafts ON art.drafts TO art_app USING(owner_id::text=current_setting('art.owner',true)) WITH CHECK(owner_id::text=current_setting('art.owner',true));
+CREATE POLICY own_requests_read ON art.requests FOR SELECT TO art_app USING(owner_id::text=current_setting('art.owner',true));
+CREATE POLICY own_requests_create ON art.requests FOR INSERT TO art_app WITH CHECK(owner_id::text=current_setting('art.owner',true) AND status='open' AND response IS NULL);
+CREATE POLICY own_audit ON art.audit FOR SELECT TO art_app USING(EXISTS(SELECT 1 FROM art.orders o WHERE o.id=order_id AND o.owner_id::text=current_setting('art.owner',true)));
+CREATE OR REPLACE FUNCTION art.lock_purchase() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN
+ IF NEW.owner_id<>OLD.owner_id OR NEW.quote_id<>OLD.quote_id OR NEW.design<>OLD.design OR NEW.design_hash<>OLD.design_hash OR NEW.price<>OLD.price THEN RAISE EXCEPTION 'Purchased design, price and ownership are immutable'; END IF;
+ IF OLD.address IS NOT NULL AND NEW.address IS DISTINCT FROM OLD.address THEN RAISE EXCEPTION 'Purchased address is immutable; contact support'; END IF;
+ IF current_setting('art.role',true)='guest' AND (NEW.payment<>OLD.payment OR NEW.production<>OLD.production OR NEW.fulfillment<>OLD.fulfillment OR NEW.proof_hash IS DISTINCT FROM OLD.proof_hash OR NEW.proof_pdf IS DISTINCT FROM OLD.proof_pdf OR NEW.refunded_amount<>OLD.refunded_amount OR NEW.proof_design IS DISTINCT FROM OLD.proof_design OR NEW.proof_revision<>OLD.proof_revision OR NEW.shipment IS DISTINCT FROM OLD.shipment OR NEW.ops_owner IS DISTINCT FROM OLD.ops_owner OR NEW.due_at IS DISTINCT FROM OLD.due_at) THEN RAISE EXCEPTION 'Operations authorization required'; END IF;
+ IF OLD.production IN ('queued','printing','qa','ready') AND (NEW.proof_hash IS DISTINCT FROM OLD.proof_hash OR NEW.proof_design IS DISTINCT FROM OLD.proof_design OR NEW.proof_revision<>OLD.proof_revision) THEN RAISE EXCEPTION 'Production has already started; proof is locked'; END IF;
+ IF NEW.approved_hash IS NOT NULL AND NEW.approved_hash IS DISTINCT FROM NEW.proof_hash THEN RAISE EXCEPTION 'Approval must match the exact proof'; END IF;
+ IF NEW.refunded_amount>(NEW.price->>'total')::bigint THEN RAISE EXCEPTION 'Refund exceeds captured amount'; END IF;
+ RETURN NEW;
+END$$;
+GRANT SELECT ON public.art_migrations TO art_app;

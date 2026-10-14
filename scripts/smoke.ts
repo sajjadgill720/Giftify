@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+try {
+  process.loadEnvFile(".env");
+} catch {}
 const base = process.env.APP_URL || "http://localhost:3000";
 let cookie = "";
 async function call(
@@ -46,7 +49,7 @@ const checkout = await call("checkouts", {
   },
 });
 assert.equal(checkout.r.status, 503);
-assert.match(checkout.data.error, /credentials/);
+assert.equal(checkout.data.code, "payment_setup_required");
 const id = checkout.data.orderId;
 const order = await call("orders/" + id);
 assert.equal(order.r.status, 200);

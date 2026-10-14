@@ -2,6 +2,7 @@ import { randomUUID, randomBytes } from "node:crypto";
 import { DB, scoped } from "./db";
 import { designSchema, price, eligible } from "./index";
 import { canonical, hash, pdf } from "../../rendering/src/index";
+import { mirrorProof } from "../../integrations/src/storage";
 export async function newSession(db: DB) {
   const id = randomUUID(),
     token = randomBytes(32).toString("hex");
@@ -142,16 +143,24 @@ export async function holdRefund(
     await tx.query("UPDATE art.orders SET production='hold' WHERE id=$1", [id]);
   });
 }
-export async function release(db: DB, id: string) {
+export async function release(db: DB, id: string, actor = "ops") {
   return scoped(db, "", "ops", async (tx) => {
     const o = (
       await tx.query("SELECT * FROM art.orders WHERE id=$1 FOR UPDATE", [id])
     ).rows[0];
     if (o?.production === "queued") return;
+    const open = (
+      await tx.query(
+        "SELECT id FROM art.requests WHERE order_id=$1 AND status='open' AND category IN ('revision','refund')",
+        [id],
+      )
+    ).rows.length;
     if (
       !o ||
       !eligible(o) ||
       !o.proof_pdf ||
+      !o.address?.confirmed ||
+      open ||
       hash(Buffer.from(o.proof_pdf)) !== o.proof_hash
     )
       throw new Error(
@@ -161,12 +170,13 @@ export async function release(db: DB, id: string) {
       "INSERT INTO art.production_jobs VALUES($1,$2,now()) ON CONFLICT DO NOTHING",
       [id, o.proof_hash],
     );
-    await tx.query("UPDATE art.orders SET production='queued' WHERE id=$1", [
-      id,
-    ]);
     await tx.query(
-      "INSERT INTO art.audit VALUES($1,$2,'ops','manual production queue release',now())",
-      [randomUUID(), id],
+      "UPDATE art.orders SET production='queued',ops_owner=$2,due_at=now()+interval '2 days' WHERE id=$1",
+      [id, actor],
+    );
+    await tx.query(
+      "INSERT INTO art.audit VALUES($1,$2,$3,'Released to manual production queue',now())",
+      [randomUUID(), id, actor],
     );
   });
 }
@@ -198,7 +208,9 @@ export async function runRender(db: DB) {
         (await tx.query("SELECT * FROM art.orders WHERE id=$1", [job.order_id]))
           .rows[0],
     );
-    const data = await pdf(o.design);
+    const design = o.proof_design || o.design;
+    const data = await pdf(design);
+    const storage = await mirrorProof(o.id, hash(data), data);
     await scoped(db, "", "ops", async (tx) => {
       const j = (
         await tx.query(
@@ -208,8 +220,12 @@ export async function runRender(db: DB) {
       ).rows[0];
       if (!j) return;
       await tx.query(
-        "UPDATE art.orders SET proof_pdf=$2,proof_hash=$3,approved_hash=NULL,render_error=NULL WHERE id=$1",
-        [o.id, data, hash(data)],
+        "UPDATE art.orders SET proof_pdf=$2,proof_hash=$3,approved_hash=NULL,render_error=NULL,proof_storage_key=$4 WHERE id=$1",
+        [o.id, data, hash(data), storage],
+      );
+      await tx.query(
+        "INSERT INTO art.proof_history(order_id,revision,design,hash,pdf) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING",
+        [o.id, o.proof_revision, design, hash(data), data],
       );
       await tx.query(
         "UPDATE art.jobs SET status='done',lease_until=NULL WHERE id=$1",

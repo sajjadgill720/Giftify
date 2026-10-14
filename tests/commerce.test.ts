@@ -128,6 +128,17 @@ test("payment replay posts once; exact approved PDF and payment gate release", a
       .length,
     1,
   );
+  await db.query("UPDATE art.orders SET address=$2 WHERE id=$1", [
+    o.id,
+    {
+      name: "Sample recipient",
+      phone: "03001234567",
+      line: "Sandbox sample address",
+      city: "Islamabad",
+      country: "PK",
+      confirmed: true,
+    },
+  ]);
   await Promise.all([release(db, o.id), release(db, o.id)]);
   assert.equal(
     (
