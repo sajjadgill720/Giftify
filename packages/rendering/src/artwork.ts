@@ -1,4 +1,7 @@
 import { Design, dimensions } from "../../domain/src/index";
+import { formatCoordinate } from "../../domain/src/coordinates";
+import { memoryLayout, memoryMarker } from "./memory-layout";
+import type { Photo } from "../../domain/src/memory";
 export type Shape =
   | { path: string; fill?: string; stroke?: string; width?: number }
   | {
@@ -19,7 +22,69 @@ const escape = (s: string) =>
         "'": "&apos;",
       })[c]!,
   );
-export function layout(d: Design) {
+export type Picture = {
+  assetId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  circle?: boolean;
+  photo: Photo;
+};
+export type ArtworkLayout = {
+  w: number;
+  h: number;
+  color: string;
+  background: string;
+  border: boolean;
+  shapes: Shape[];
+  lines: { text: string; y: number; size: number; font: string }[];
+  pictures?: Picture[];
+};
+export function layout(d: Design): ArtworkLayout {
+  if (d.memory) return memoryLayout(d);
+  if (d.template === "coordinates") {
+    const [w, h] = dimensions[d.size];
+    const background = {
+      ivory: "#faf6ed",
+      midnight: "#202e3d",
+      rose: "#f1e1dd",
+    }[d.theme || "ivory"];
+    const color = d.theme === "midnight" ? "#faf6ed" : "#39352f";
+    return {
+      w,
+      h,
+      background,
+      color,
+      border: false,
+      shapes: [] as Shape[],
+      lines: [
+        { text: d.title, y: h * 0.21, size: w * 0.022, font: "sans" },
+        {
+          text: formatCoordinate(
+            d.location!.latitude,
+            "latitude",
+            d.coordinateFormat,
+          ),
+          y: h * 0.43,
+          size: w * 0.095,
+          font: d.typography === "modern" ? "sans" : "serif",
+        },
+        {
+          text: formatCoordinate(
+            d.location!.longitude,
+            "longitude",
+            d.coordinateFormat,
+          ),
+          y: h * 0.52,
+          size: w * 0.095,
+          font: d.typography === "modern" ? "sans" : "serif",
+        },
+        { text: d.subtitle, y: h * 0.69, size: w * 0.032, font: "serif" },
+        { text: d.date, y: h * 0.77, size: w * 0.017, font: "sans" },
+      ],
+    };
+  }
   const [w, h] = dimensions[d.size],
     colors =
       (d.version || 1) === 1
@@ -39,7 +104,7 @@ export function layout(d: Design) {
             orbit: "#757286",
             bloom: "#927b74",
           },
-    color = colors[d.template],
+    color = colors[d.template as keyof typeof colors] || "#53644d",
     x = w / 2,
     y = h * 0.3,
     s = w / 210;
@@ -155,6 +220,7 @@ export function layout(d: Design) {
     w,
     h,
     color,
+    background: "#faf6ed",
     shapes,
     border: (d.version || 1) === 1,
     lines: [
@@ -179,7 +245,20 @@ export function layout(d: Design) {
     ],
   };
 }
-export function svg(d: Design) {
+export function svg(d: Design, images: (string | undefined)[] = []) {
   const l = layout(d);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${l.w}mm" height="${l.h}mm" viewBox="0 0 ${l.w} ${l.h}" role="img" aria-label="Personalized artwork"><rect width="100%" height="100%" fill="#faf6ed"/>${l.border ? `<rect x="12" y="12" width="${l.w - 24}" height="${l.h - 24}" fill="none" stroke="${l.color}" stroke-width=".5"/>` : ""}${l.shapes.map((s) => `${"path" in s ? `<path d="${s.path}"` : `<circle cx="${s.circle[0]}" cy="${s.circle[1]}" r="${s.circle[2]}"`} fill="${s.fill || "none"}" stroke="${s.stroke || "none"}" stroke-width="${s.width || 0.45}"/>`).join("")}${l.lines.map((t) => `<text x="${l.w / 2}" y="${t.y}" text-anchor="middle" direction="auto" font-family="${t.font === "serif" && !l.border ? "Times New Roman,serif" : "Helvetica,Arial,sans-serif"}" font-size="${t.size}" fill="${l.color}">${escape(t.text)}</text>`).join("")}</svg>`;
+  const pictures = (l.pictures || [])
+    .map((pic, i) =>
+      images[i]
+        ? `<defs><clipPath id="photo-${i}">${pic.circle ? `<circle cx="${pic.x + pic.width / 2}" cy="${pic.y + pic.height / 2}" r="${pic.width / 2}"/>` : `<rect x="${pic.x}" y="${pic.y}" width="${pic.width}" height="${pic.height}"/>`}</clipPath></defs><image href="${escape(images[i]!)}" x="${pic.x}" y="${pic.y}" width="${pic.width}" height="${pic.height}" clip-path="url(#photo-${i})" preserveAspectRatio="none"/>`
+        : "",
+    )
+    .join("");
+  const marker = memoryMarker(d)
+    .map(
+      (s) =>
+        `${"path" in s ? `<path d="${s.path}"` : `<circle cx="${s.circle[0]}" cy="${s.circle[1]}" r="${s.circle[2]}"`} fill="${s.fill}" stroke="${s.stroke || "none"}" stroke-width="${s.width || 0.5}"/>`,
+    )
+    .join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${l.w}mm" height="${l.h}mm" viewBox="0 0 ${l.w} ${l.h}" role="img" aria-label="Personalized artwork"><rect width="100%" height="100%" fill="${l.background}"/>${l.border ? `<rect x="12" y="12" width="${l.w - 24}" height="${l.h - 24}" fill="none" stroke="${l.color}" stroke-width=".5"/>` : ""}${l.shapes.map((s) => `${"path" in s ? `<path d="${s.path}"` : `<circle cx="${s.circle[0]}" cy="${s.circle[1]}" r="${s.circle[2]}"`} fill="${s.fill || "none"}" stroke="${s.stroke || "none"}" stroke-width="${s.width || 0.45}"/>`).join("")}${pictures}${marker}${l.lines.map((t) => `<text x="${l.w / 2}" y="${t.y}" text-anchor="middle" direction="auto" font-family="${t.font === "serif" && !l.border ? "Times New Roman,serif" : "Helvetica,Arial,sans-serif"}" font-size="${t.size}" fill="${l.color}">${escape(t.text)}</text>`).join("")}</svg>`;
 }

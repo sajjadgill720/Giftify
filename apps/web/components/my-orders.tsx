@@ -94,44 +94,84 @@ export default function MyOrders() {
       ) : (
         <div className="keepsake-grid">
           {items.map((o) => (
-            <Link
-              key={o.id}
-              className="keepsake-card"
-              href={
-                tab === "orders"
-                  ? "/orders/" + o.id
-                  : `/design/${o.design.template}?draft=${o.id}`
-              }
-            >
-              <div className="keepsake-art">
-                <Artwork design={o.proof_design || o.design} />
-              </div>
-              <div>
-                <span className="caption">
-                  {tab === "orders"
-                    ? "ORDER #" + o.id.slice(0, 8).toUpperCase()
-                    : "YOUR SAVED DESIGN"}
-                </span>
-                <h3>{(o.proof_design || o.design).title}</h3>
-                <p>
-                  {o.design.size} ·{" "}
-                  {o.design.finish === "oak" ? "Oak effect" : "Matte black"}
-                </p>
-                <span className="status-badge">
-                  {tab === "orders"
-                    ? o.approved_hash
-                      ? "Proof approved"
-                      : statusLabel[o.payment]
-                    : "Ready to personalize"}
-                </span>
-                <div className="keepsake-bottom">
-                  <span>
-                    {date(tab === "orders" ? o.created_at : o.updated_at)}
-                  </span>
-                  <Icon name="arrow" size={18} />
+            <article key={o.id}>
+              <Link
+                className="keepsake-card"
+                href={
+                  tab === "orders"
+                    ? "/orders/" + o.id
+                    : `/design/${o.design.template}?draft=${o.id}`
+                }
+              >
+                <div className="keepsake-art">
+                  <Artwork design={o.proof_design || o.design} />
                 </div>
-              </div>
-            </Link>
+                <div>
+                  <span className="caption">
+                    {tab === "orders"
+                      ? "ORDER #" + o.id.slice(0, 8).toUpperCase()
+                      : "YOUR SAVED DESIGN"}
+                  </span>
+                  <h3>{(o.proof_design || o.design).title}</h3>
+                  <p>
+                    {o.design.size} ·{" "}
+                    {o.design.finish === "oak" ? "Oak effect" : "Matte black"}
+                  </p>
+                  <span className="status-badge">
+                    {tab === "orders"
+                      ? o.approved_hash
+                        ? "Proof approved"
+                        : statusLabel[o.payment]
+                      : "Ready to personalize"}
+                  </span>
+                  <div className="keepsake-bottom">
+                    <span>
+                      {date(tab === "orders" ? o.created_at : o.updated_at)}
+                    </span>
+                    <Icon name="arrow" size={18} />
+                  </div>
+                </div>
+              </Link>
+              {tab === "drafts" && (
+                <div className="draft-actions">
+                  <button
+                    className="text-button"
+                    onClick={async () => {
+                      try {
+                        const copy = await api("drafts", { design: o.design });
+                        location.assign(
+                          `/design/${copy.design.template}?draft=${copy.id}`,
+                        );
+                      } catch (e) {
+                        setError((e as Error).message);
+                      }
+                    }}
+                  >
+                    Duplicate design
+                  </button>
+                  <button
+                    className="text-button"
+                    onClick={async () => {
+                      try {
+                        await api(`drafts/${o.id}/archive`, {
+                          revision: o.revision,
+                        });
+                        const key = "keepsake-v2-" + o.design.template;
+                        if (
+                          localStorage.getItem(key) === JSON.stringify(o.design)
+                        )
+                          localStorage.removeItem(key);
+                        await load();
+                      } catch (e) {
+                        setError((e as Error).message);
+                      }
+                    }}
+                  >
+                    Delete draft
+                  </button>
+                </div>
+              )}
+            </article>
           ))}
         </div>
       )}

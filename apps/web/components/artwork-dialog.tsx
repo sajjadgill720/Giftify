@@ -32,7 +32,7 @@ export function ArtworkDialog({
       >
         <Icon name="close" />
       </button>
-      <Artwork design={design} />
+      <Artwork design={design} inspirationWhenEmpty />
     </dialog>
   );
 }

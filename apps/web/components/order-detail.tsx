@@ -22,7 +22,7 @@ export default function OrderDetail({ id }: { id: string }) {
   useEffect(() => {
     void load();
   }, [load]);
-  useEffect(() => setReviewed(false), [o?.proof_hash]);
+  useEffect(() => setReviewed(false), [o?.proof_hash, o?.proof_revision]);
   async function action(name: string, body: unknown = {}) {
     setError("");
     setNotice("");
@@ -150,10 +150,12 @@ export default function OrderDetail({ id }: { id: string }) {
               This is a test order. Your artwork and details are saved.{" "}
               {o.hasCheckout
                 ? "Complete or reconcile the existing test checkout before trying again."
-                : "Payment credentials must be configured before a test charge can be verified."}
+                : o.canCheckout
+                  ? "Your printable proof is ready. Continue to the configured test checkout when you are ready."
+                  : "Payment setup and a ready print proof are required before a test charge can be verified."}
             </p>
           </div>
-          {o.hasCheckout && (
+          {(o.hasCheckout || o.canCheckout) && (
             <button
               className="button secondary"
               onClick={() => action("resume-checkout")}
@@ -188,10 +190,21 @@ export default function OrderDetail({ id }: { id: string }) {
               </span>
             </div>
             <div className="proof-preview">
-              <Artwork design={d} />
+              <Artwork
+                design={d}
+                previewUrl={o.proof_hash ? o.previewUrl : undefined}
+              />
               <div>
                 <h3>{d.title}</h3>
                 <p>{d.subtitle}</p>
+                {d.memory?.names && <p>{d.memory.names}</p>}
+                {d.memory?.place && <p>{d.memory.place}</p>}
+                {d.memory?.mode === "words" && (
+                  <details>
+                    <summary>Your written memory</summary>
+                    <p>{d.memory.narrative}</p>
+                  </details>
+                )}
                 <span>{d.date}</span>
                 <dl className="compact-spec">
                   <div>
@@ -218,13 +231,7 @@ export default function OrderDetail({ id }: { id: string }) {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Review exact print PDF <Icon name="arrow" size={16} />
-                  </a>
-                  <a
-                    className="text-link"
-                    href={`/api/orders/${id}/proof?download=1`}
-                  >
-                    <Icon name="download" size={15} /> Download proof
+                    Open proof preview <Icon name="arrow" size={16} />
                   </a>
                 </div>
                 {o.approved_hash ? (
@@ -233,8 +240,8 @@ export default function OrderDetail({ id }: { id: string }) {
                     <div>
                       <strong>You’ve approved this exact proof.</strong>
                       <p>
-                        Your approval stays attached to this PDF. A revision
-                        requires a new approval.
+                        Your approval stays attached to this artwork revision. A
+                        revision requires a new approval.
                       </p>
                     </div>
                   </div>
@@ -242,9 +249,11 @@ export default function OrderDetail({ id }: { id: string }) {
                   <div className="approval-box">
                     <h3>A final look, then it’s yours.</h3>
                     <p>
-                      Open the PDF and check every name, date, and detail. The
-                      artwork above is a preview; the PDF is the exact file you
-                      approve.
+                      Check every name, date, coordinate and layout in the proof
+                      preview. This is a lower-resolution view of the production
+                      layout. Your approval is bound to this revision and its
+                      production checksum. The print team receives the
+                      production file.
                     </p>
                     <label className="checkbox-field">
                       <input
@@ -253,8 +262,8 @@ export default function OrderDetail({ id }: { id: string }) {
                         onChange={(e) => setReviewed(e.target.checked)}
                       />
                       <span>
-                        I’ve reviewed the print PDF and checked the spelling,
-                        date, and layout.
+                        I’ve reviewed the proof preview and checked the
+                        spelling, date, and layout.
                       </span>
                     </label>
                     <button
@@ -362,6 +371,25 @@ export default function OrderDetail({ id }: { id: string }) {
         <aside>
           <article className="panel order-summary">
             <h3>Your order at a glance</h3>
+            <button
+              className="text-button"
+              disabled={!!busy}
+              onClick={async () => {
+                setBusy("duplicate");
+                setError("");
+                try {
+                  const draft = await api(`orders/${id}/duplicate`, {});
+                  location.assign(
+                    `/design/${draft.design.template}?draft=${draft.id}`,
+                  );
+                } catch (e) {
+                  setError((e as Error).message);
+                  setBusy("");
+                }
+              }}
+            >
+              Personalize this design again <Icon name="edit" size={15} />
+            </button>
             <dl className="price-breakdown">
               <div>
                 <dt>Artwork & frame</dt>

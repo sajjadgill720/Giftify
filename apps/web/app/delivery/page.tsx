@@ -16,7 +16,7 @@ export default function Delivery() {
         },
         {
           title: "What exactly am I approving?",
-          text: "You approve the checksum-bound PDF file shown on your order page. Check every name, date, and layout in that file. A browser artwork preview is useful for customization but does not replace the exact print PDF.",
+          text: "Review the watermarked proof preview on your order page and check every name, date, coordinate and layout. Your approval is bound to the current artwork revision and production checksum. Production PDFs are available only to the authorized print team.",
         },
         {
           title: "How are production and quality checks recorded?",

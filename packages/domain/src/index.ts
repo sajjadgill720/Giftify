@@ -1,5 +1,11 @@
 import { z } from "zod";
 import { pilotPricing as settings } from "./pilot-config";
+import {
+  memoryTemplates,
+  memorySchema,
+  memoryProfiles,
+  defaultMemory,
+} from "./memory";
 export const designSchema = z
   .object({
     template: z.enum([
@@ -9,15 +15,78 @@ export const designSchema = z
       "arch",
       "orbit",
       "bloom",
+      "coordinates",
+      ...memoryTemplates,
     ]),
     title: z.string().trim().min(1).max(32),
     subtitle: z.string().trim().max(48),
     date: z.string().trim().max(24),
     size: z.enum(["A4", "A3"]),
     finish: z.enum(["oak", "black"]),
-    version: z.union([z.literal(1), z.literal(2)]).optional(),
+    version: z
+      .union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)])
+      .optional(),
+    memory: memorySchema.optional(),
+    location: z
+      .object({
+        latitude: z.number().finite().min(-90).max(90),
+        longitude: z.number().finite().min(-180).max(180),
+      })
+      .strict()
+      .optional(),
+    coordinateFormat: z.enum(["decimal", "dms"]).optional(),
+    theme: z.enum(["ivory", "midnight", "rose"]).optional(),
+    typography: z.enum(["classic", "modern"]).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((d, ctx) => {
+    if ((memoryTemplates as readonly string[]).includes(d.template)) {
+      if (
+        d.version !== 4 ||
+        !d.memory ||
+        d.location ||
+        d.coordinateFormat ||
+        d.theme ||
+        d.typography
+      )
+        ctx.addIssue({
+          code: "custom",
+          message: "Memory designs require version 4 memory settings.",
+        });
+      return;
+    }
+    if (d.memory || d.version === 4)
+      ctx.addIssue({
+        code: "custom",
+        message: "Memory settings require a memory template.",
+      });
+    if (d.template === "coordinates") {
+      if (
+        d.version !== 3 ||
+        !d.location ||
+        !d.coordinateFormat ||
+        !d.theme ||
+        !d.typography
+      )
+        ctx.addIssue({
+          code: "custom",
+          path: ["location"],
+          message:
+            "Coordinates artwork needs a version 3 location, format, theme and typography.",
+        });
+    } else if (
+      d.version === 3 ||
+      d.location ||
+      d.coordinateFormat ||
+      d.theme ||
+      d.typography
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "These options belong to coordinates artwork only.",
+      });
+    }
+  });
 export type Design = z.infer<typeof designSchema>;
 export const templates = [
   "chapter",
@@ -26,9 +95,10 @@ export const templates = [
   "arch",
   "orbit",
   "bloom",
+  "coordinates",
 ] as const;
 export const dimensions = { A4: [210, 297], A3: [297, 420] } as const;
-export const catalog = templates.map((id, i) => ({
+const originalCatalog = templates.map((id, i) => ({
   id,
   name: [
     "A new chapter",
@@ -37,9 +107,10 @@ export const catalog = templates.map((id, i) => ({
     "Our beginning",
     "Around you",
     "In full bloom",
+    "A place to remember",
   ][i],
-  category: "Milestone Art",
-  version: 2,
+  category: id === "coordinates" ? "Coordinates & Stories" : "Milestone Art",
+  version: id === "coordinates" ? 3 : 2,
   occasion: [
     "New beginnings",
     "Achievements",
@@ -47,6 +118,7 @@ export const catalog = templates.map((id, i) => ({
     "Love & anniversaries",
     "Love & anniversaries",
     "Family & home",
+    "Love & anniversaries",
   ][i],
   description: [
     "A quiet celebration of everything ahead. An original sun-and-arch composition for your next chapter.",
@@ -55,12 +127,36 @@ export const catalog = templates.map((id, i) => ({
     "A place for the day your story began. Two architectural arches, one shared beginning.",
     "Some people are your entire universe. An orbital composition for the connection that keeps you grounded.",
     "For the people who help you grow. An original botanical composition to celebrate family and belonging.",
+    "Some places become part of you. Preserve their exact coordinates alongside your names, a meaningful date, and a few words of your own.",
   ][i],
-  accent: ["#53644d", "#6b6d46", "#697c8b", "#ac785f", "#757286", "#927b74"][i],
+  accent: [
+    "#53644d",
+    "#6b6d46",
+    "#697c8b",
+    "#ac785f",
+    "#757286",
+    "#927b74",
+    "#514638",
+  ][i],
 }));
-export function sampleDesign(
-  template: (typeof templates)[number] = "chapter",
-): Design {
+export const catalog = [
+  ...originalCatalog,
+  ...memoryTemplates.map((id) => ({ id, ...memoryProfiles[id], version: 4 })),
+];
+export function sampleDesign(template: Design["template"] = "chapter"): Design {
+  if ((memoryTemplates as readonly string[]).includes(template)) {
+    const id = template as (typeof memoryTemplates)[number];
+    return {
+      template: id,
+      version: 4,
+      title: memoryProfiles[id].title,
+      subtitle: "A moment worth keeping",
+      date: "14.02.2026",
+      size: "A3",
+      finish: "oak",
+      memory: defaultMemory(id),
+    };
+  }
   const product = catalog.find((p) => p.id === template)!;
   return {
     template,
@@ -74,7 +170,18 @@ export function sampleDesign(
     date: template === "arch" ? "12.09.2026" : "A MOMENT WORTH KEEPING",
     size: "A3",
     finish: "oak",
-    version: 2,
+    version: template === "coordinates" ? 3 : 2,
+    ...(template === "coordinates"
+      ? {
+          title: "Where our story began",
+          subtitle: "Ayesha & Hamza",
+          date: "12.09.2026",
+          location: { latitude: 33.6844, longitude: 73.0479 },
+          coordinateFormat: "decimal" as const,
+          theme: "ivory" as const,
+          typography: "classic" as const,
+        }
+      : {}),
   };
 }
 export const requestSchema = z

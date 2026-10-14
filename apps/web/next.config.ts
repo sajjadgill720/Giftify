@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 const config: NextConfig = {
-  serverExternalPackages: ["@electric-sql/pglite", "pg", "pdfkit"],
+  serverExternalPackages: ["@electric-sql/pglite", "pg", "pdfkit", "sharp"],
   async headers() {
     return [
       {

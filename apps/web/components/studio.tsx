@@ -1,5 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useReducer, useRef } from "react";
+import { historyReducer } from "../../../packages/domain/src/editor-history";
+import { CoordinateControls } from "./coordinate-controls";
+import { MemoryControls } from "./memory-controls";
+import { PhotoQualityReview } from "./photo-quality";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -15,31 +19,77 @@ import { api, money, ApiError } from "../lib/client";
 export default function Studio({
   initial,
   draftId,
+  explicitFormat = false,
 }: {
   initial: Design;
   draftId?: string;
+  explicitFormat?: boolean;
 }) {
   const router = useRouter(),
-    [design, setDesign] = useState(initial),
+    [history, dispatch] = useReducer(historyReducer<Design>, {
+      past: [],
+      present: initial,
+      future: [],
+    }),
     [step, setStep] = useState(0),
-    [draft, setDraft] = useState(draftId),
+    [draft, setDraft] = useState<{ id: string; revision: number }>(),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(""),
     [error, setError] = useState(""),
     [loaded, setLoaded] = useState(false),
-    [zoom, setZoom] = useState(false);
+    [zoom, setZoom] = useState(false),
+    [coordinatesValid, setCoordinatesValid] = useState(true),
+    [conflict, setConflict] = useState(false),
+    [saving, setSaving] = useState(false),
+    [autosavePaused, setAutosavePaused] = useState(false),
+    [mediaBusy, setMediaBusy] = useState(false),
+    [scene, setScene] = useState("front");
+  const design = history.present;
+  const saved = useRef(JSON.stringify(initial)),
+    currentDraftId = useRef<string | undefined>(undefined),
+    inFlight = useRef(false),
+    mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const product = catalog.find((p) => p.id === design.template)!;
   useEffect(() => {
+    if (draftId && currentDraftId.current === draftId) return;
     let alive = true;
     (async () => {
       try {
         await api("session", {});
         if (draftId) {
           const d = await api("drafts/" + draftId);
-          if (alive) setDesign(designSchema.parse(d.design));
+          if (alive) {
+            const parsed = designSchema.parse(d.design);
+            dispatch({ type: "reset", value: parsed });
+            saved.current = JSON.stringify(parsed);
+            currentDraftId.current = d.id;
+            setDraft({ id: d.id, revision: d.revision });
+          }
         } else {
           const saved = localStorage.getItem("keepsake-v2-" + initial.template);
-          if (saved && alive) setDesign(designSchema.parse(JSON.parse(saved)));
+          if (saved && alive) {
+            const parsed = designSchema.parse(JSON.parse(saved));
+            if (
+              parsed.memory &&
+              initial.memory &&
+              parsed.template !== initial.template
+            ) {
+              parsed.template = initial.template;
+              parsed.memory.layout = initial.memory.layout;
+            }
+            dispatch({
+              type: "reset",
+              value: explicitFormat
+                ? { ...parsed, size: initial.size, finish: initial.finish }
+                : parsed,
+            });
+          }
         }
       } catch (e) {
         if (alive) setError((e as Error).message);
@@ -50,7 +100,7 @@ export default function Studio({
     return () => {
       alive = false;
     };
-  }, [draftId, initial.template]);
+  }, [draftId, initial.template, explicitFormat, initial.size, initial.finish]);
   useEffect(() => {
     if (loaded)
       localStorage.setItem(
@@ -59,23 +109,86 @@ export default function Studio({
       );
   }, [design, loaded, initial.template]);
   function update(key: keyof Design, value: string) {
-    setDesign((d) => ({ ...d, [key]: value }));
-    setNotice("");
-    setError("");
+    edit({
+      ...design,
+      [key]: value,
+      ...(key === "size" && design.memory
+        ? { memory: { ...design.memory, qualityAcknowledged: false } }
+        : {}),
+    });
   }
-  async function save() {
-    setBusy(true);
+  function edit(next: Design) {
+    dispatch({ type: "edit", value: next });
+    setNotice("");
+    if (!conflict) setError("");
+    setAutosavePaused(false);
+  }
+  async function save(automatic = false) {
+    if (
+      inFlight.current ||
+      conflict ||
+      !coordinatesValid ||
+      !designSchema.safeParse(design).success
+    )
+      return;
+    inFlight.current = true;
+    setSaving(true);
     setError("");
     try {
-      const d = await api("drafts", { design, id: draft });
-      setDraft(d.id);
-      setNotice("Saved to My keepsakes in this browser.");
+      const d = await api("drafts", {
+        design,
+        id: draft?.id,
+        revision: draft?.revision,
+      });
+      saved.current = JSON.stringify(design);
+      if (mounted.current) {
+        currentDraftId.current = d.id;
+        setDraft({ id: d.id, revision: d.revision });
+        if (!draftId)
+          router.replace(`/design/${design.template}?draft=${d.id}`, {
+            scroll: false,
+          });
+        setNotice(
+          automatic
+            ? "Changes saved privately."
+            : "Saved to My keepsakes in this browser.",
+        );
+      }
     } catch (e) {
-      setError((e as Error).message);
+      if (mounted.current) {
+        setAutosavePaused(true);
+        setError((e as Error).message);
+        if (e instanceof ApiError && e.data.code === "draft_conflict")
+          setConflict(true);
+      }
     } finally {
-      setBusy(false);
+      inFlight.current = false;
+      if (mounted.current) setSaving(false);
     }
   }
+  useEffect(() => {
+    if (
+      !loaded ||
+      conflict ||
+      !coordinatesValid ||
+      saving ||
+      autosavePaused ||
+      JSON.stringify(design) === saved.current
+    )
+      return;
+    const timer = setTimeout(() => {
+      void save(true);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [
+    design,
+    loaded,
+    draft,
+    conflict,
+    coordinatesValid,
+    saving,
+    autosavePaused,
+  ]);
   async function next() {
     setError("");
     if (step < 2) {
@@ -101,7 +214,7 @@ export default function Studio({
     <section className="studio-page">
       <div className="studio-top">
         <Link
-          href={"/products/" + initial.template}
+          href={"/products/" + design.template}
           className="text-link back-link"
         >
           ← Back to design
@@ -111,18 +224,41 @@ export default function Studio({
         </span>
         <button
           className="text-button"
-          onClick={save}
-          disabled={busy || !loaded}
+          onClick={() => save()}
+          disabled={
+            busy ||
+            mediaBusy ||
+            saving ||
+            !loaded ||
+            conflict ||
+            !coordinatesValid
+          }
         >
           <Icon name="download" size={15} />
-          Save draft
+          {saving ? "Saving…" : "Save draft"}
         </button>
       </div>
       <div className="studio-layout">
         <div className="studio-preview">
           <span className="eyebrow">YOUR STORY, TAKING SHAPE</span>
-          <div className="studio-art">
-            <Artwork design={design} />
+          <div className={"studio-art memory-scene-" + scene}>
+            <Artwork design={design} inspirationWhenEmpty />
+          </div>
+          <div className="scene-switch" aria-label="Preview setting">
+            {[
+              ["front", "Artwork"],
+              ["wall", "On the wall"],
+              ["shelf", "On a shelf"],
+            ].map(([id, label]) => (
+              <button
+                key={id}
+                className={scene === id ? "selected" : ""}
+                aria-pressed={scene === id}
+                onClick={() => setScene(id)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
           <div className="preview-tools">
             <span>
@@ -138,7 +274,8 @@ export default function Studio({
             </button>
           </div>
           <p className="fine-print">
-            Artwork preview · Final print PDF is reviewed separately.
+            Preview of a physical print · Production files are reserved for the
+            print team.
           </p>
         </div>
         <div className="studio-controls">
@@ -176,8 +313,49 @@ export default function Studio({
               ][step]
             }
           </p>
+          <div className="editor-history" aria-label="Editing history">
+            <button
+              className="text-button"
+              disabled={!history.past.length}
+              onClick={() => {
+                dispatch({ type: "undo" });
+                setNotice("");
+                setAutosavePaused(false);
+              }}
+            >
+              ↶ Undo
+            </button>
+            <button
+              className="text-button"
+              disabled={!history.future.length}
+              onClick={() => {
+                dispatch({ type: "redo" });
+                setNotice("");
+                setAutosavePaused(false);
+              }}
+            >
+              ↷ Redo
+            </button>
+            <span className="field-hint">
+              {saving ? "Saving changes…" : "Edits save after a short pause"}
+            </span>
+          </div>
           {step === 0 && (
             <div className="story-fields">
+              {design.memory && (
+                <MemoryControls
+                  design={design}
+                  change={edit}
+                  onBusy={setMediaBusy}
+                />
+              )}
+              {design.template === "coordinates" && (
+                <CoordinateControls
+                  design={design}
+                  validity={setCoordinatesValid}
+                  change={edit}
+                />
+              )}
               {[
                 {
                   key: "title",
@@ -285,6 +463,9 @@ export default function Studio({
           )}
           {step === 2 && (
             <>
+              {design.memory && (
+                <PhotoQualityReview design={design} change={edit} />
+              )}
               <dl className="review-list">
                 <div>
                   <dt>Your headline</dt>
@@ -305,12 +486,41 @@ export default function Studio({
                     {design.finish === "oak" ? "Oak effect" : "Matte black"}
                   </dd>
                 </div>
+                {design.memory && (
+                  <>
+                    <div>
+                      <dt>Memory</dt>
+                      <dd>
+                        {design.memory.mode === "words"
+                          ? "Written story"
+                          : design.memory.mode === "place"
+                            ? "Special place & map"
+                            : `${design.memory.photos.length} private photograph(s)`}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Personal details</dt>
+                      <dd>
+                        {[design.memory.names, design.memory.place]
+                          .filter(Boolean)
+                          .join(" · ") || "—"}
+                      </dd>
+                    </div>
+                    {design.memory.mode === "words" && (
+                      <div>
+                        <dt>Your story</dt>
+                        <dd>{design.memory.narrative}</dd>
+                      </div>
+                    )}
+                  </>
+                )}
               </dl>
               <div className="soft-note">
                 <Icon name="shield" />
                 <p>
                   One wording revision is included before production. Your final
-                  PDF proof requires your approval.
+                  preview requires your approval. You’re purchasing a physical
+                  print.
                 </p>
               </div>
             </>
@@ -325,6 +535,15 @@ export default function Studio({
             <p className="error-message" role="alert">
               {error}
             </p>
+          )}
+          {conflict && (
+            <Link
+              className="text-link"
+              href={"/design/" + initial.template + "?draft=" + draft?.id}
+              onClick={() => window.location.reload()}
+            >
+              Reload the saved draft to resolve the conflict
+            </Link>
           )}
           <div className="studio-total">
             <span>
@@ -346,7 +565,9 @@ export default function Studio({
             <button
               className="button"
               onClick={next}
-              disabled={busy || !loaded}
+              disabled={
+                busy || mediaBusy || !loaded || !coordinatesValid || conflict
+              }
             >
               {busy
                 ? "Preparing…"

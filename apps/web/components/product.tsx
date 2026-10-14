@@ -11,12 +11,19 @@ import { Artwork } from "./artwork";
 import { ProductCard } from "./product-card";
 import { Icon } from "./icons";
 import { money } from "../lib/client";
+import { ShowcaseFrame, showcaseFor } from "./showcase-frame";
 export default function Product({
   product,
 }: {
   product: (typeof catalog)[number];
 }) {
   const [d, setD] = useState<Design>(sampleDesign(product.id));
+  const example = showcaseFor(product.id);
+  const [showExample, setShowExample] = useState(true);
+  function selectFinish(finish: Design["finish"]) {
+    setD({ ...d, finish });
+    setShowExample(false);
+  }
   return (
     <>
       <section className="section product-page">
@@ -28,20 +35,52 @@ export default function Product({
         <div className="product-layout">
           <div>
             <div className="product-gallery">
-              <Artwork design={d} />
+              {example && showExample ? (
+                <ShowcaseFrame kind={example} priority />
+              ) : (
+                <Artwork design={d} inspirationWhenEmpty />
+              )}
               <span className="gallery-note">
-                PERSONAL ART, MADE FOR YOUR SPACE
+                {example && showExample
+                  ? "FINISHED DESIGN INSPIRATION · MAKE IT YOUR OWN"
+                  : "PERSONAL ART, MADE FOR YOUR SPACE"}
               </span>
             </div>
+            {example && (
+              <div
+                className="showcase-switch"
+                aria-label="Product gallery views"
+              >
+                <button
+                  aria-pressed={showExample}
+                  onClick={() => setShowExample(true)}
+                >
+                  Finished example
+                </button>
+                <button
+                  aria-pressed={!showExample}
+                  onClick={() => setShowExample(false)}
+                >
+                  Frame preview
+                </button>
+              </div>
+            )}
             <div className="swatch-thumbs">
               {["oak", "black"].map((f) => (
                 <button
                   key={f}
                   className={d.finish === f ? "selected" : ""}
-                  onClick={() => setD({ ...d, finish: f as Design["finish"] })}
+                  onClick={() => selectFinish(f as Design["finish"])}
                   aria-label={"Preview " + f + " frame"}
                 >
-                  <Artwork design={{ ...d, finish: f as Design["finish"] }} />
+                  {example ? (
+                    <ShowcaseFrame
+                      kind={example}
+                      finish={f as Design["finish"]}
+                    />
+                  ) : (
+                    <Artwork design={{ ...d, finish: f as Design["finish"] }} />
+                  )}
                 </button>
               ))}
               <div>
@@ -89,7 +128,7 @@ export default function Product({
                 {(["oak", "black"] as const).map((f) => (
                   <button
                     key={f}
-                    onClick={() => setD({ ...d, finish: f })}
+                    onClick={() => selectFinish(f)}
                     aria-pressed={d.finish === f}
                     className={d.finish === f ? "selected" : ""}
                   >
@@ -145,7 +184,7 @@ export default function Product({
                 </summary>
                 <p>
                   Your headline, message, and date appear in a live preview.
-                  Review the exact print PDF before approving. English print
+                  Review the proof preview before approving. English print
                   proofs are supported; Urdu print export is held until licensed
                   font and shaping validation is complete.
                 </p>

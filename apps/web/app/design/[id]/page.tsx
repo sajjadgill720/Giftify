@@ -19,5 +19,5 @@ export default async function DesignPage({
   const design = sampleDesign(p.id);
   if (q.size === "A3" || q.size === "A4") design.size = q.size;
   if (q.finish === "oak" || q.finish === "black") design.finish = q.finish;
-  return <Studio initial={design} draftId={q.draft} />;
+  return <Studio initial={design} draftId={q.draft} explicitFormat={!!(q.size || q.finish)} />;
 }

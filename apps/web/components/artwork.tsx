@@ -1,22 +1,63 @@
 import type { CSSProperties } from "react";
 import { Design, sampleDesign } from "../../../packages/domain/src/index";
 import { svg } from "../../../packages/rendering/src/representation";
+import { MemoryImages } from "./memory-images";
+import { ShowcaseFrame, showcaseFor } from "./showcase-frame";
 export function Artwork({
   design,
   framed = true,
   className = "",
   scene = false,
+  previewUrl,
+  assetEndpoint,
+  inspirationWhenEmpty = false,
 }: {
   design?: Design;
   framed?: boolean;
   className?: string;
   scene?: boolean;
+  previewUrl?: string;
+  assetEndpoint?: string;
+  inspirationWhenEmpty?: boolean;
 }) {
   const d = design || sampleDesign();
+  const example = showcaseFor(d.template);
+  const emptyPhoto =
+    d.memory &&
+    d.memory.mode !== "words" &&
+    !d.memory.photos.length &&
+    !d.memory.map;
+  if (
+    example &&
+    !previewUrl &&
+    (!design || (inspirationWhenEmpty && emptyPhoto))
+  ) {
+    return (
+      <div className={`artwork ${className}`}>
+        <ShowcaseFrame kind={example} finish={d.finish} />
+        {design && (
+          <span className="inspiration-note">
+            Example design · Add your own memory to begin
+          </span>
+        )}
+      </div>
+    );
+  }
   return (
-    <div className={`${scene ? "art-scene " : ""}${className}`}>
+    <div className={`artwork ${scene ? "art-scene " : ""}${className}`}>
       <div className={`${framed ? "art-frame " + d.finish : "art-paper"}`}>
-        <div className="art-svg" dangerouslySetInnerHTML={{ __html: svg(d) }} />
+        {previewUrl ? (
+          <img
+            className="proof-image"
+            src={previewUrl}
+            alt="Watermarked preview of your personalized artwork"
+          />
+        ) : (
+          <div className="art-svg">
+            <div dangerouslySetInnerHTML={{ __html: svg(d) }} />
+            {d.memory && <MemoryImages design={d} endpoint={assetEndpoint} />}
+          </div>
+        )}
       </div>
     </div>
   );

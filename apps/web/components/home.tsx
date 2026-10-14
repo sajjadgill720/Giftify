@@ -3,6 +3,12 @@ import { catalog, sampleDesign } from "../../../packages/domain/src/index";
 import { Artwork } from "./artwork";
 import { ProductCard } from "./product-card";
 import { Icon } from "./icons";
+import { MemoryDemo } from "./memory-demo";
+import { ShowcaseFrame } from "./showcase-frame";
+import {
+  memoryProfiles,
+  memoryTemplates,
+} from "../../../packages/domain/src/memory";
 export default function Home() {
   return (
     <>
@@ -19,11 +25,11 @@ export default function Home() {
             <em>Give them a place.</em>
           </h1>
           <p className="hero-description">
-            The people, the beginnings, the little things that became
-            everything. Turn your story into art that feels like you.
+            Your favorite photo. The place you first met. The little moment that
+            became everything. Turn it into something you can keep, or give.
           </p>
-          <Link href="/shop" className="button">
-            Find your keepsake <Icon name="arrow" />
+          <Link href="#create-memory" className="button">
+            Create your memory <Icon name="arrow" />
           </Link>
           <div className="hero-note">
             <span className="little-stars">✳ ✳ ✳</span> Your words. Your moment.
@@ -33,17 +39,10 @@ export default function Home() {
         <div className="hero-room">
           <span className="room-label">THE ART OF REMEMBERING</span>
           <div className="room-frame main-frame">
-            <Artwork
-              design={{
-                ...sampleDesign("chapter"),
-                title: "Our next chapter",
-                subtitle: "Ayesha & Hamza",
-                date: "12.09.2026",
-              }}
-            />
+            <ShowcaseFrame kind="photo" priority />
           </div>
           <div className="room-frame small-frame">
-            <Artwork design={sampleDesign("bloom")} />
+            <ShowcaseFrame kind="place" />
           </div>
           <div className="room-shelf" />
           <div className="room-vase">
@@ -74,6 +73,70 @@ export default function Home() {
           </span>
         ))}
       </div>
+      <section className="section memory-category-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">WHAT WOULD YOU LOVE TO REMEMBER?</p>
+            <h2>Every memory has a place here.</h2>
+          </div>
+          <Link href="/shop" className="text-link">
+            Explore all designs <Icon name="arrow" size={16} />
+          </Link>
+        </div>
+        <div className="memory-category-grid">
+          {memoryTemplates.map((id, i) => (
+            <Link
+              className={"memory-category-card category-" + id}
+              href={"/products/" + id}
+              key={id}
+            >
+              <span className="category-number">0{i + 1}</span>
+              <Icon
+                name={
+                  id === "place" || id === "travel"
+                    ? "sun"
+                    : id === "words"
+                      ? "edit"
+                      : "frame"
+                }
+                size={29}
+              />
+              <h3>{memoryProfiles[id].category}</h3>
+              <p>{memoryProfiles[id].hint}</p>
+              <span className="text-link">
+                Make it personal <Icon name="arrow" size={14} />
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+      <MemoryDemo />
+      <section className="section memory-feature">
+        <div className="memory-feature-art">
+          <ShowcaseFrame kind="place" />
+          <p className="showcase-caption">
+            A little inspiration: Paris, where it all began.
+          </p>
+        </div>
+        <div>
+          <p className="eyebrow">COORDINATES & STORIES</p>
+          <h2>
+            A place.
+            <br />
+            <em>A whole world of meaning.</em>
+          </h2>
+          <p>
+            The first hello. The home you grew up in. The place you said yes.
+            Turn its coordinates into a beautifully personal keepsake.
+          </p>
+          <Link className="button" href="/products/coordinates">
+            Remember your place <Icon name="arrow" />
+          </Link>
+          <p className="fine-print">
+            Framed physical print · Your coordinates, names and date
+          </p>
+        </div>
+      </section>
       <section className="section collection-section">
         <div className="section-heading">
           <div>
@@ -92,14 +155,7 @@ export default function Home() {
       </section>
       <section className="story-banner">
         <div className="story-visual">
-          <Artwork
-            design={{
-              ...sampleDesign("arch"),
-              title: "Where we began",
-              subtitle: "Our kind of forever",
-              date: "14.02.2026",
-            }}
-          />
+          <ShowcaseFrame kind="arch" />
           <span className="handwritten">
             a moment,
             <br />
@@ -135,21 +191,27 @@ export default function Home() {
           {[
             [
               "01",
-              "Find your feeling",
-              "Choose an original design for the moment you’re celebrating.",
+              "Choose a memory",
+              "A photo, a special place, a relationship, or an occasion.",
               "spark",
             ],
             [
               "02",
-              "Make it yours",
-              "Add names, a date, and a few words. See your design as you go.",
+              "Make it personal",
+              "Add photos, names, dates, and the words that matter.",
               "edit",
             ],
             [
               "03",
-              "Give it your approval",
-              "Review the exact print proof before it enters production.",
+              "Preview your artwork",
+              "Try a different frame, palette, and setting. Find what feels right.",
               "check",
+            ],
+            [
+              "04",
+              "Place your order",
+              "Save your design, complete test checkout, and approve its proof before fulfillment.",
+              "bag",
             ],
           ].map(([n, title, text, icon]) => (
             <article key={n}>

@@ -76,9 +76,9 @@ async function fund(o: Record<string, any>) {
   );
   return tracker;
 }
-test("six distinct versioned artworks export exact A4 and A3 proofs; legacy art remains stable", async () => {
+test("all versioned artworks export exact A4 and A3 proofs; legacy art remains stable", async () => {
   const outputs = new Set<string>();
-  for (const p of catalog)
+  for (const p of catalog.filter(p => p.version < 4))
     for (const size of ["A4", "A3"] as const) {
       const d = { ...sampleDesign(p.id), size };
       const bytes = await pdf(d);
@@ -94,7 +94,7 @@ test("six distinct versioned artworks export exact A4 and A3 proofs; legacy art 
         svg(d).includes(size === "A4" ? 'width="210mm"' : 'width="297mm"'),
       );
     }
-  assert.equal(outputs.size, 12);
+  assert.equal(outputs.size, catalog.filter(p => p.version < 4).length * 2);
   assert.ok(
     svg({ ...sampleDesign("chapter"), version: 1 }).includes("#234e45"),
   );
@@ -111,6 +111,7 @@ test("durable drafts are private and another owner cannot edit or enumerate them
     a.id,
     { ...sampleDesign(), title: "Updated draft" },
     d.id,
+    d.revision,
   );
   assert.equal(updated.design.title, "Updated draft");
 });

@@ -2,7 +2,7 @@
 
 # Keepsake consumer product — test mode
 
-An original milestone-art storefront built from [the supplied specification](SPECIFICATION.md). The working slice is catalog → customization → server quote → Safepay sandbox checkout → verified payment → exact PDF approval → manual production queue. There are no live payment or shipment endpoints and no corporate subscriptions.
+An original milestone-art storefront built from [the supplied specification](SPECIFICATION.md). The working slice is catalog → customization → server quote → Safepay sandbox checkout → verified payment → revision-bound preview approval → admin production export → manual production queue. There are no live payment or shipment endpoints and no corporate subscriptions.
 
 ## Run locally
 
@@ -37,7 +37,7 @@ Generate a random credential with `node -e "console.log(require('crypto').random
 
 Set DATABASE_URL to a PostgreSQL runtime connection and MIGRATION_DATABASE_URL to a separate privileged migration connection, apply `npm run db:migrate`, and run web and `npm run worker` separately. Use PROJECT_ROOT if the worker runs from a different folder. The `art` schema is private, excluded from exposed Supabase schemas, and has no PUBLIC grants. Every runtime transaction switches to `art_app` and sets server-authorized ownership context. RLS is tested under that non-owner role; composite ownership FKs reject cross-owner quote/order attachment. The migration connection must be allowed to SET ROLE art_app. Deploy a separate least-privilege login granted art_app, and use a privileged connection only for migration. Do not expose SQL connectivity or role-context settings to clients. Verified Supabase consumer accounts and guest linking are implemented behind real credentials; cloud acceptance and deployment hardening remain prerequisites. Guest credentials expire after seven days.
 
-The worker claims durable jobs with leases, attempt caps and a fencing token. Render bytes are stored privately in PostgreSQL for this small pilot, served only after ownership checks. Optional configured Supabase private storage mirrors immutable proofs; cloud acceptance remains open; arbitrary uploads, URLs, SVG and audio are not accepted. Current PDFs are vector A4/A3 using Helvetica, without printer bleed. Urdu previews are draft browser renderings only; non-ASCII print export is blocked pending licensed font embedding, shaping fixtures and real-print checks. Approval is of the final PDF, not the browser preview.
+The worker claims durable jobs with leases, attempt caps and a fencing token. Render bytes are stored privately in PostgreSQL for this small pilot, available only through authenticated admin exports; customers receive a bounded watermarked JPEG after ownership checks. Optional configured Supabase private storage mirrors immutable proofs; cloud acceptance remains open; arbitrary uploads, URLs, SVG and audio are not accepted. Current PDFs are vector A4/A3 using Helvetica, without printer bleed. Urdu previews are draft browser renderings only; non-ASCII print export is blocked pending licensed font embedding, shaping fixtures and real-print checks. Customer approval binds the watermarked proof preview to its artwork revision and production checksum. Production PDFs are accessible only through authenticated admin exports.
 
 ## External prerequisites and launch gates
 
@@ -49,3 +49,11 @@ The worker claims durable jobs with leases, attempt caps and a fencing token. Re
 - Privacy/retention terms, refund reconciliation ledger and support workflow before real consumer purchases. Confirmed domestic address/contact snapshots are collected; refund webhooks hold production and enter a durable inbox; verified cumulative balances reconcile partial/full refunds with replay-safe ledger postings.
 
 See [milestones](docs/milestones.md) and [architecture decisions](docs/decisions/001-consumer-pilot.md). The full original plan is preserved in SPECIFICATION.md; only verified implementation work is checked off in the milestone file.
+
+## Memory platform audit and extension
+
+The full new master specification was audited against the existing implementation. See [requirement status](docs/memory-platform-audit.md) and [delivered milestone, API/migrations/deployment](docs/memory-platform-milestone.md). The new coordinates category runs through the existing purchase flow. Customers receive watermarked JPEG proofs; production PDFs require authenticated, paid-and-approved admin exports. Private drafts support debounced revision-safe autosave, undo/redo, archive and copy/reorder. Photo/collage uploads, real maps, calculated skies, managed inventory and cart remain open; this is still a test store.
+
+## Private photo memories
+
+The existing studio now supports private JPEG/PNG uploads, crop/zoom/rotation/filters, eight memory categories, family collages, names/age/place/story fields, preserved content across templates and wall/shelf previews. See [photo architecture, APIs, migrations, setup and limitations](docs/photo-memory-extension.md). Apply migrations 001–011. Real maps require the server MapTiler key and confirmed commercial print rights; no provider output has been verified without credentials. Run `npm run smoke:photos` for the local unpaid purchase check. Production uploads require private Supabase storage; original files and final PDFs remain operator-only.

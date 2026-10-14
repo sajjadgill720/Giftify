@@ -60,10 +60,11 @@ const proof = await fetch(base + `/api/orders/${id}/proof`, {
   headers: { Cookie: cookie },
 });
 assert.equal(proof.status, 200);
+assert.equal(proof.headers.get("content-type"), "image/jpeg");
 assert.ok(
   Buffer.from(await proof.arrayBuffer())
-    .subarray(0, 4)
-    .toString() === "%PDF",
+    .subarray(0, 2)
+    .equals(Buffer.from([0xff, 0xd8])),
 );
 assert.equal(
   (await call(`orders/${id}/approve-proof`, { hash: "wrong" })).r.status,

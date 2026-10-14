@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Artwork } from "./artwork";
 import { Icon } from "./icons";
 import { api, money, ApiError } from "../lib/client";
+import { catalog } from "../../../packages/domain/src/index";
 export default function Checkout({ quoteId }: { quoteId: string }) {
   const router = useRouter(),
     [q, setQ] = useState<any>(),
@@ -52,7 +53,10 @@ export default function Checkout({ quoteId }: { quoteId: string }) {
       location.assign(d.url);
     } catch (e) {
       if (e instanceof ApiError) {
-        if (e.data.code === "payment_setup_required" && e.data.orderId) {
+        if (
+          ["payment_setup_required", "proof_preparing"].includes(e.data.code) &&
+          e.data.orderId
+        ) {
           router.push("/orders/" + e.data.orderId);
           return;
         }
@@ -256,7 +260,10 @@ export default function Checkout({ quoteId }: { quoteId: string }) {
                 {q.design.size} ·{" "}
                 {q.design.finish === "oak" ? "Oak effect" : "Matte black"}
               </span>
-              <span>Personalized milestone art</span>
+              <span>
+                {catalog.find((p) => p.id === q.design.template)?.category} ·
+                Physical print
+              </span>
               <Link href={"/design/" + q.design.template}>Edit design</Link>
             </div>
           </div>
@@ -291,7 +298,7 @@ export default function Checkout({ quoteId }: { quoteId: string }) {
           <div className="summary-note">
             <Icon name="frame" size={18} />
             <p>
-              You review the exact print PDF before production. One wording
+              You review the proof preview before production. One wording
               revision is included.
             </p>
           </div>

@@ -16,7 +16,7 @@ export default function Terms() {
         },
         {
           title: "Artwork and approval",
-          text: "You are responsible for checking the exact print PDF before approving. One wording revision is supported before production. Revision clears prior approval. Changes to product, size, finish, or template require a new quote.",
+          text: "You are responsible for checking the proof preview before approving. One wording revision is supported before production. Revision clears prior approval. Changes to product, size, finish, or template require a new quote.",
         },
         {
           title: "Delivery and refunds",

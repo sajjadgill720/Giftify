@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import sharp from "sharp";
+import { sampleDesign } from "../packages/domain/src/index";
 try {
   process.loadEnvFile(".env");
 } catch {}
@@ -23,6 +25,8 @@ for (const route of [
   "/shop",
   "/products/chapter",
   "/design/chapter",
+  "/products/coordinates",
+  "/design/coordinates",
   "/orders",
   "/help",
   "/delivery",
@@ -34,13 +38,12 @@ for (const route of [
 assert.equal((await call("session", {})).status, 200);
 const purchaser = cookie;
 const design = {
-  template: "arch",
+  ...sampleDesign("coordinates"),
   title: "Product smoke fixture",
   subtitle: "No payment or real shipment",
   date: "14.10.2026",
   size: "A3",
   finish: "oak",
-  version: 2,
 };
 const draft = await call("drafts", { design });
 assert.equal(draft.status, 201);
@@ -71,6 +74,33 @@ const id = checkout.data.orderId;
 const original = (await call("orders/" + id)).data;
 assert.equal(original.payment, "pending");
 assert.ok(original.proof_hash);
+assert.equal("proof_pdf" in original, false);
+assert.equal("proof_storage_key" in original, false);
+const proof = await fetch(base + `/api/orders/${id}/proof`, {
+  headers: { Cookie: purchaser },
+});
+assert.equal(proof.status, 200);
+assert.equal(proof.headers.get("content-type"), "image/jpeg");
+const metadata = await sharp(Buffer.from(await proof.arrayBuffer())).metadata();
+assert.ok(metadata.width! <= 640 && metadata.height! <= 640);
+assert.equal((await call(`orders/${id}/proof?download=1`)).status, 403);
+assert.equal((await call(`ops/orders/${id}/export`)).status, 401);
+const saved = await call("drafts", {
+  id: draft.data.id,
+  revision: draft.data.revision,
+  design: { ...design, title: "Accepted autosave fixture" },
+});
+assert.equal(saved.status, 201);
+assert.equal(
+  (
+    await call("drafts", {
+      id: draft.data.id,
+      revision: draft.data.revision,
+      design,
+    })
+  ).status,
+  409,
+);
 assert.equal(
   (
     await call(`orders/${id}/approve-proof`, {
@@ -97,6 +127,7 @@ const operator = cookie;
 const list = await call("ops/orders");
 assert.equal(list.status, 200);
 assert.ok(list.data.some((o: any) => o.id === id));
+assert.equal((await call(`ops/orders/${id}/export`)).status, 400);
 assert.equal((await call(`ops/orders/${id}/release`, {})).status, 400);
 assert.equal(
   (
@@ -124,6 +155,18 @@ assert.notEqual(revised.proof_hash, original.proof_hash);
 assert.equal(revised.design.title, design.title);
 assert.equal(revised.proof_design.title, "Revised smoke fixture");
 assert.equal(revised.requests[0].status, "resolved");
+const duplicated = await call(`orders/${id}/duplicate`, {});
+assert.equal(duplicated.status, 201);
+assert.equal(duplicated.data.design.title, "Revised smoke fixture");
+assert.equal(
+  (
+    await call(`drafts/${draft.data.id}/archive`, {
+      revision: saved.data.revision,
+    })
+  ).status,
+  200,
+);
+assert.equal((await call(`drafts/${draft.data.id}`)).status, 404);
 assert.equal(
   (
     await call(`orders/${id}/approve-proof`, {
@@ -147,5 +190,5 @@ assert.equal((await call("ops/logout", {})).status, 200);
 cookie = operator;
 assert.equal((await call("ops/orders")).status, 401);
 console.log(
-  "Product HTTP smoke passed: all public routes, private drafts, checkout validation, unpaid proof, support revision, cleared approval, stale-proof denial, private ownership, authenticated ops, production/shipment guards, and logout revocation. No payment or shipment success simulated.",
+  "Product HTTP smoke passed: coordinates purchase, bounded JPEG proof, customer production-download denial, admin export gates, private revision-safe drafts, archive/copy, checkout validation, support revision, stale-proof denial, ownership, production/shipment guards, and ops logout. No payment or shipment success simulated.",
 );

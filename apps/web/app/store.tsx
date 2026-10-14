@@ -138,7 +138,7 @@ export default function Store() {
           <p className="eyebrow">MAKE IT YOURS</p>
           <h2>Your words, beautifully kept.</h2>
           <p>
-            Preview your draft, then review the exact print PDF before
+            Preview your draft, then review the proof preview before
             approving.
           </p>
           <label>

@@ -521,7 +521,7 @@ function OrderWorkbench({
         </button>
       </div>
       <div className="workbench-art">
-        <Artwork design={d} />
+        <Artwork design={d} assetEndpoint={`ops/orders/${o.id}/assets`} />
         <div>
           <strong>
             {d.size} · {d.finish === "oak" ? "Oak effect" : "Matte black"}
@@ -535,8 +535,35 @@ function OrderWorkbench({
               rel="noreferrer"
               href={`/api/ops/orders/${o.id}/proof`}
             >
-              Open exact PDF <Icon name="arrow" size={14} />
+              Open proof preview <Icon name="arrow" size={14} />
             </a>
+          )}
+          {o.payment === "captured" &&
+            o.approved_hash === o.proof_hash &&
+            o.approved_hash &&
+            o.approved_revision === o.proof_revision &&
+            o.production !== "hold" && (
+              <a
+                className="button secondary"
+                href={`/api/ops/orders/${o.id}/export`}
+              >
+                Download production PDF <Icon name="download" size={15} />
+              </a>
+            )}
+          {!!o.exports?.length && (
+            <details className="export-history">
+              <summary>Export history ({o.exports.length})</summary>
+              {o.exports.map((e: any) => (
+                <p key={e.id}>
+                  Revision {e.revision} · {e.width_mm} × {e.height_mm} mm ·{" "}
+                  {e.actor}
+                  <br />
+                  <small>
+                    {date(e.created_at)} · SHA256 {e.checksum}
+                  </small>
+                </p>
+              ))}
+            </details>
           )}
         </div>
       </div>
@@ -551,6 +578,29 @@ function OrderWorkbench({
             Retry failed render
           </button>
         </div>
+      )}
+      {!!o.assets?.length && (
+        <section className="workbench-section">
+          <h4>Private customer uploads</h4>
+          <p>
+            Originals are accessible only to authorized operations staff. Every
+            original download is audited.
+          </p>
+          {o.assets.map((a: any) => (
+            <div className="admin-upload" key={a.id}>
+              <span>
+                {a.kind === "map" ? "Map source" : "Customer photograph"} ·{" "}
+                {a.width} × {a.height} pixels
+              </span>
+              <a
+                className="text-link"
+                href={`/api/ops/orders/${o.id}/assets/${a.id}/original`}
+              >
+                Download original <Icon name="download" size={14} />
+              </a>
+            </div>
+          ))}
+        </section>
       )}
       <div className="workbench-section">
         <h4>Delivery details</h4>
@@ -794,6 +844,50 @@ function OrderWorkbench({
               />
             </label>
           ))}
+          {revision.memory && (
+            <>
+              {(["names", "place", "narrative"] as const).map((k) => (
+                <label className="field" key={k}>
+                  Correct {k === "narrative" ? "written memory" : k}
+                  <input
+                    maxLength={
+                      k === "narrative" ? 220 : k === "place" ? 64 : 48
+                    }
+                    value={revision.memory[k]}
+                    onChange={(e) =>
+                      setRevision({
+                        ...revision,
+                        memory: { ...revision.memory!, [k]: e.target.value },
+                      })
+                    }
+                  />
+                </label>
+              ))}
+              {revision.template === "birthday" && (
+                <label className="field">
+                  Correct age
+                  <input
+                    type="number"
+                    min={0}
+                    max={120}
+                    value={revision.memory.age ?? ""}
+                    onChange={(e) =>
+                      setRevision({
+                        ...revision,
+                        memory: {
+                          ...revision.memory!,
+                          age:
+                            e.target.value === ""
+                              ? undefined
+                              : Math.round(Number(e.target.value)),
+                        },
+                      })
+                    }
+                  />
+                </label>
+              )}
+            </>
+          )}
           <button className="button wide" disabled={busy}>
             Prepare revised proof
           </button>

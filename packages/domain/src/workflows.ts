@@ -2,21 +2,32 @@ import { randomUUID, randomBytes } from "node:crypto";
 import { z } from "zod";
 import { DB, scoped } from "./db";
 import { designSchema, requestSchema, Design } from "./index";
-import { hash } from "../../rendering/src/index";
+import { hash, validatePrintText } from "../../rendering/src/index";
+import { validateAssets } from "./assets";
+export class DraftConflict extends Error {}
 export async function saveDraft(
   db: DB,
   owner: string,
   input: unknown,
   id?: string,
+  expectedRevision?: number,
 ) {
   const design = designSchema.parse(input);
   return scoped(db, owner, "guest", async (tx) => {
+    await validateAssets(tx, design);
     if (id) {
+      if (!Number.isInteger(expectedRevision) || expectedRevision! < 0)
+        throw new DraftConflict(
+          "A draft revision is required. Reload your saved design.",
+        );
       const r = await tx.query(
-        "UPDATE art.drafts SET design=$2,updated_at=now() WHERE id=$1 RETURNING *",
-        [id, design],
+        "UPDATE art.drafts SET design=$2,updated_at=now(),revision=revision+1 WHERE id=$1 AND revision=$3 AND archived=false RETURNING *",
+        [id, design, expectedRevision],
       );
-      if (!r.rows[0]) throw new Error("Draft unavailable.");
+      if (!r.rows[0])
+        throw new DraftConflict(
+          "This draft changed in another tab or is unavailable. Reload it before saving; your local edits are retained.",
+        );
       return r.rows[0];
     }
     return (
@@ -25,6 +36,24 @@ export async function saveDraft(
         [randomUUID(), owner, design],
       )
     ).rows[0];
+  });
+}
+export async function archiveDraft(
+  db: DB,
+  owner: string,
+  id: string,
+  revision: number,
+) {
+  return scoped(db, owner, "guest", async (tx) => {
+    const r = await tx.query(
+      "UPDATE art.drafts SET archived=true,revision=revision+1,updated_at=now() WHERE id=$1 AND revision=$2 AND archived=false RETURNING id",
+      [id, revision],
+    );
+    if (!r.rows.length)
+      throw new DraftConflict(
+        "Draft changed or is unavailable. Refresh before deleting.",
+      );
+    return r.rows[0];
   });
 }
 export async function createRequest(
@@ -92,6 +121,17 @@ export async function reviseProof(
   actor: string,
 ) {
   const next = designSchema.parse(input);
+  validatePrintText(next);
+  const frozen = (value: unknown) => {
+    const { title, subtitle, date, ...configuration } =
+      designSchema.parse(value);
+    if (configuration.memory) {
+      const { names, narrative, place, age, ...memoryConfiguration } =
+        configuration.memory;
+      return { ...configuration, memory: memoryConfiguration };
+    }
+    return configuration;
+  };
   return scoped(db, "", "ops", async (tx) => {
     const o = (
       await tx.query("SELECT * FROM art.orders WHERE id=$1 FOR UPDATE", [
@@ -106,14 +146,11 @@ export async function reviseProof(
       throw new Error(
         "Proof revision is unavailable after release or the included revision.",
       );
-    if (
-      ["template", "size", "finish", "version"].some(
-        (key) => (next as any)[key] !== o.design[key],
-      )
-    )
+    if (JSON.stringify(frozen(next)) !== JSON.stringify(frozen(o.design)))
       throw new Error(
         "Product changes require a new quote. Only proof wording may be revised.",
       );
+    await validateAssets(tx, next, true);
     const request = (
       await tx.query(
         "SELECT id FROM art.requests WHERE order_id=$1 AND category='revision' AND status='open' FOR UPDATE",

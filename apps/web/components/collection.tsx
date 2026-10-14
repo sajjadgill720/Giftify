@@ -10,18 +10,22 @@ export default function Collection({
 }) {
   const [filter, setFilter] = useState(initialOccasion),
     [sort, setSort] = useState("featured"),
+    [category, setCategory] = useState("All artwork"),
     [search, setSearch] = useState("");
   const occasions = ["All designs", ...new Set(catalog.map((p) => p.occasion))];
   const products = catalog
     .filter(
       (p) =>
         (filter === "All designs" || p.occasion === filter) &&
-        [p.name, p.description, p.occasion]
+        (category === "All artwork" || p.category === category) &&
+        [p.name, p.description, p.occasion, p.category]
           .join(" ")
           .toLowerCase()
           .includes(search.toLowerCase()),
     )
-    .sort((a, b) => (sort === "name" ? a.name.localeCompare(b.name) : 0));
+    .sort((a, b) =>
+      sort === "name" ? a.name.localeCompare(b.name) : b.version - a.version,
+    );
   return (
     <section className="section shop-page">
       <div className="page-intro">
@@ -60,6 +64,19 @@ export default function Collection({
         </label>
       </div>
       <div className="result-bar">
+        <label>
+          Artwork category{" "}
+          <select
+            aria-label="Artwork category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option>All artwork</option>
+            {[...new Set(catalog.map((p) => p.category))].map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+          </select>
+        </label>
         <span>
           {products.length} original designs{" "}
           <span className="muted">· Made personal for you</span>
@@ -90,6 +107,7 @@ export default function Collection({
             className="button"
             onClick={() => {
               setFilter("All designs");
+              setCategory("All artwork");
               setSearch("");
             }}
           >

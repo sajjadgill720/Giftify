@@ -28,12 +28,27 @@ import {
   advanceProduction,
   recordShipment,
   claimPurchaser,
+  archiveDraft,
+  DraftConflict,
 } from "../../../packages/domain/src/workflows";
 import {
   enqueueVerifiedEvent,
   runPaymentInbox,
 } from "../../../packages/domain/src/payment-inbox";
-import { svg } from "../../../packages/rendering/src/representation";
+import { preview } from "../../../packages/rendering/src/preview";
+import { productionExport } from "../../../packages/domain/src/exports";
+import {
+  uploadAsset,
+  assetSummary,
+  artworkPictures,
+  MAX_UPLOAD,
+} from "../../../packages/domain/src/assets";
+import { getAsset } from "../../../packages/integrations/src/asset-store";
+import sharp from "sharp";
+import {
+  searchPlaces,
+  fetchMap,
+} from "../../../packages/integrations/src/maps";
 import { hash } from "../../../packages/rendering/src/index";
 import {
   authConfigured,
@@ -94,8 +109,14 @@ function safeOrder(o: Record<string, any>) {
   } = o;
   return {
     ...safe,
-    preview: svg(o.proof_design || o.design),
+    previewUrl: `/api/orders/${o.id}/proof?revision=${o.proof_revision}`,
     hasCheckout: !!tracker,
+    canCheckout: !!(
+      process.env.SAFEPAY_SECRET_KEY &&
+      process.env.SAFEPAY_PUBLIC_KEY &&
+      (o.proof_hash || tracker) &&
+      !o.render_error
+    ),
   };
 }
 async function startCheckout(db: DB, id: string, o: Record<string, any>) {
@@ -151,6 +172,16 @@ async function startCheckout(db: DB, id: string, o: Record<string, any>) {
       },
       503,
     );
+  if (!o.proof_hash || !o.proof_pdf)
+    return json(
+      {
+        error:
+          "Your print proof is being prepared. No payment was taken. Continue from your saved order when it is ready.",
+        code: "proof_preparing",
+        orderId: o.id,
+      },
+      409,
+    );
   const claimed = await scoped(
     db,
     id,
@@ -204,9 +235,13 @@ export async function handle(
         (process.env.APP_URL || "http://localhost:3000")
     )
       return json({ error: "Request origin rejected." }, 403);
-    if (Number(req.headers.get("content-length") || 0) > 16384)
+    const upload = route === "assets" && post;
+    if (
+      Number(req.headers.get("content-length") || 0) >
+      (upload ? MAX_UPLOAD : 16384)
+    )
       return json({ error: "Request too large." }, 413);
-    const raw = post ? await req.text() : "";
+    const raw = post && !upload ? await req.text() : "";
     if (Buffer.byteLength(raw) > 16384)
       return json({ error: "Request too large." }, 413);
     const body = raw ? JSON.parse(raw) : {};
@@ -221,6 +256,9 @@ export async function handle(
         storageReady: !!process.env.SUPABASE_STORAGE_BUCKET,
         printLanguage: "English",
         accountsReady: authConfigured(),
+        mapsReady:
+          !!process.env.MAPTILER_API_KEY &&
+          process.env.MAP_PRINT_LICENSE_CONFIRMED === "true",
       });
     if (route.startsWith("auth/")) {
       if (limit("consumer-auth", 30))
@@ -411,18 +449,89 @@ export async function handle(
               .rows[0],
         );
         if (!o) return json({ error: "Order unavailable." }, 404);
+        if (path[3] === "assets" && path[4] && !post) {
+          const assetId = z.uuid().parse(path[4]);
+          const asset = await scoped(
+            db,
+            "",
+            "ops",
+            async (tx) =>
+              (
+                await tx.query(
+                  "SELECT a.* FROM art.assets a JOIN art.order_assets oa ON oa.asset_id=a.id WHERE oa.order_id=$1 AND a.id=$2",
+                  [oid, assetId],
+                )
+              ).rows[0],
+          );
+          if (!asset) return json({ error: "Order upload unavailable." }, 404);
+          if (!path[5]) return json(assetSummary(asset));
+          const original = path[5] === "original";
+          if (!original && path[5] !== "preview")
+            return json({ error: "Not found." }, 404);
+          const bytes = await getAsset(
+            original ? asset.original_key : asset.preview_key,
+          );
+          if (original)
+            await scoped(db, "", "ops", (tx) =>
+              tx.query(
+                "INSERT INTO art.audit VALUES(gen_random_uuid(),$1,$2,$3,now())",
+                [oid, actor, "Original upload accessed: " + assetId],
+              ),
+            );
+          return new NextResponse(new Uint8Array(bytes), {
+            headers: {
+              "Content-Type": original
+                ? "application/octet-stream"
+                : "image/jpeg",
+              "Content-Disposition": original
+                ? `attachment; filename="original-${assetId}.${bytes[0] === 255 ? "jpg" : "png"}"`
+                : 'inline; filename="preview.jpg"',
+              "Cache-Control": "private, no-store",
+            },
+          });
+        }
         if (path[3] === "proof" && !post) {
           if (!o.proof_pdf) return json({ error: "Proof not ready." }, 409);
-          return new NextResponse(new Uint8Array(o.proof_pdf), {
+          return new NextResponse(
+            new Uint8Array(
+              await preview(
+                o.proof_design || o.design,
+                await artworkPictures(
+                  db,
+                  "",
+                  o.proof_design || o.design,
+                  "ops",
+                ),
+              ),
+            ),
+            {
+              headers: {
+                "Content-Type": "image/jpeg",
+                "Cache-Control": "no-store",
+                "Content-Disposition": 'inline; filename="preview.jpg"',
+              },
+            },
+          );
+        }
+        if (path[3] === "export" && !post) {
+          const result = await productionExport(db, oid, actor);
+          return new NextResponse(new Uint8Array(result.bytes), {
             headers: {
               "Content-Type": "application/pdf",
-              "Cache-Control": "no-store",
-              "Content-Disposition": 'inline; filename="proof.pdf"',
+              "Cache-Control": "private, no-store",
+              "Content-Disposition": `attachment; filename="keepsake-${oid}-r${result.metadata.revision}.pdf"`,
+              "X-Content-Type-Options": "nosniff",
             },
           });
         }
         if (!post && !path[3]) {
           const extra = await scoped(db, "", "ops", async (tx) => ({
+            assets: (
+              await tx.query(
+                "SELECT a.id,a.kind,a.width,a.height,a.created_at FROM art.assets a JOIN art.order_assets oa ON oa.asset_id=a.id WHERE oa.order_id=$1",
+                [oid],
+              )
+            ).rows,
             requests: (
               await tx.query(
                 "SELECT * FROM art.requests WHERE order_id=$1 ORDER BY created_at",
@@ -444,6 +553,12 @@ export async function handle(
             payments: (
               await tx.query(
                 "SELECT id,status,attempts,error FROM art.payment_inbox WHERE order_id=$1",
+                [oid],
+              )
+            ).rows,
+            exports: (
+              await tx.query(
+                "SELECT * FROM art.production_exports WHERE order_id=$1 ORDER BY created_at DESC",
                 [oid],
               )
             ).rows,
@@ -572,6 +687,111 @@ export async function handle(
     const id = await owner(db, token);
     if (limit(db.customerId || id, 120))
       return json({ error: "Too many requests. Try again shortly." }, 429);
+    if (route.startsWith("places/") && post) {
+      if (
+        !process.env.MAPTILER_API_KEY ||
+        process.env.MAP_PRINT_LICENSE_CONFIRMED !== "true"
+      )
+        return json(
+          {
+            error:
+              "Map search and printing need provider configuration and commercial print rights. You can create a photo or written memory now.",
+            code: "map_setup_required",
+          },
+          503,
+        );
+      if (limit("maps:" + id, 12))
+        return json({ error: "Please wait before requesting more maps." }, 429);
+      if (route === "places/search")
+        return json(await searchPlaces(body.query));
+      if (route === "places/map") {
+        const map = await fetchMap(body);
+        const asset = await uploadAsset(db, id, map.bytes, "map", {
+          selection: map.selection,
+          attribution: map.attribution,
+        });
+        return json({ ...asset, selection: map.selection }, 201);
+      }
+    }
+    if (route === "assets" && post) {
+      if (limit("uploads:" + id, 8))
+        return json(
+          { error: "Please wait a minute before adding more photographs." },
+          429,
+        );
+      const reader = req.body?.getReader();
+      if (!reader) return json({ error: "Choose a JPEG or PNG image." }, 400);
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      while (true) {
+        const chunk = await reader.read();
+        if (chunk.done) break;
+        size += chunk.value.length;
+        if (size > MAX_UPLOAD) {
+          await reader.cancel();
+          return json({ error: "Choose a photo up to 8 MB." }, 413);
+        }
+        chunks.push(chunk.value);
+      }
+      return json(await uploadAsset(db, id, Buffer.concat(chunks)), 201);
+    }
+    if (route === "assets" && !post)
+      return json(
+        await scoped(db, id, "guest", async (tx) =>
+          (
+            await tx.query(
+              "SELECT * FROM art.assets WHERE archived=false ORDER BY created_at DESC LIMIT 50",
+            )
+          ).rows.map(assetSummary),
+        ),
+      );
+    if (path[0] === "assets" && path[1] && !post) {
+      const asset = await scoped(
+        db,
+        id,
+        "guest",
+        async (tx) =>
+          (
+            await tx.query(
+              "SELECT * FROM art.assets WHERE id=$1 AND archived=false",
+              [z.uuid().parse(path[1])],
+            )
+          ).rows[0],
+      );
+      if (!asset)
+        return json({ error: "Private photograph unavailable." }, 404);
+      if (path[2] === "preview") {
+        const rotation = z
+          .enum(["0", "90", "180", "270"])
+          .parse(req.nextUrl.searchParams.get("rotation") || "0");
+        const bytes = await getAsset(asset.preview_key);
+        return new NextResponse(
+          new Uint8Array(
+            rotation === "0"
+              ? bytes
+              : await sharp(bytes)
+                  .rotate(Number(rotation))
+                  .jpeg({ quality: 78 })
+                  .toBuffer(),
+          ),
+          {
+            headers: {
+              "Content-Type": "image/jpeg",
+              "Cache-Control": "private, no-store",
+              "Content-Disposition": 'inline; filename="photo-preview.jpg"',
+            },
+          },
+        );
+      }
+      if (!path[2]) return json(assetSummary(asset));
+      return json(
+        {
+          error:
+            "Production-quality uploads are reserved for authorized operators.",
+        },
+        403,
+      );
+    }
     if (route === "drafts" && !post)
       return json(
         await scoped(
@@ -593,8 +813,18 @@ export async function handle(
           id,
           body.design,
           body.id ? z.uuid().parse(body.id) : undefined,
+          body.id ? z.number().int().min(0).parse(body.revision) : undefined,
         ),
         201,
+      );
+    if (path[0] === "drafts" && path[1] && path[2] === "archive" && post)
+      return json(
+        await archiveDraft(
+          db,
+          id,
+          z.uuid().parse(path[1]),
+          z.number().int().min(0).parse(body.revision),
+        ),
       );
     if (path[0] === "drafts" && path[1] && !post) {
       const d = await scoped(
@@ -688,6 +918,8 @@ export async function handle(
         );
       }
       if (post) {
+        if (path[2] === "duplicate")
+          return json(await saveDraft(db, id, o.proof_design || o.design), 201);
         if (path[2] === "approve-proof") {
           await approve(
             db,
@@ -718,21 +950,40 @@ export async function handle(
         }
       }
       if (path[2] === "proof" && !post) {
+        if (req.nextUrl.searchParams.has("download"))
+          return json(
+            {
+              error:
+                "Production files are available only to authorized administrators.",
+            },
+            403,
+          );
         if (!o.proof_pdf)
           return json(
             { error: o.render_error || "Your proof is being prepared." },
             409,
           );
-        return new NextResponse(new Uint8Array(o.proof_pdf), {
-          headers: {
-            "Content-Type": "application/pdf",
-            "Content-Disposition": req.nextUrl.searchParams.get("download")
-              ? 'attachment; filename="keepsake-proof.pdf"'
-              : 'inline; filename="proof.pdf"',
-            "Cache-Control": "private, no-store",
-            "X-Frame-Options": "SAMEORIGIN",
+        return new NextResponse(
+          new Uint8Array(
+            await preview(
+              o.proof_design || o.design,
+              await artworkPictures(
+                db,
+                id,
+                o.proof_design || o.design,
+                "guest",
+              ),
+            ),
+          ),
+          {
+            headers: {
+              "Content-Type": "image/jpeg",
+              "Content-Disposition": 'inline; filename="preview.jpg"',
+              "Cache-Control": "private, no-store",
+              "X-Frame-Options": "SAMEORIGIN",
+            },
           },
-        });
+        );
       }
       if (!post && !path[2]) {
         const extra = await scoped(db, id, "guest", async (tx) => ({
@@ -761,6 +1012,8 @@ export async function handle(
     }
     return json({ error: "Not found." }, 404);
   } catch (e) {
+    if (e instanceof DraftConflict)
+      return json({ error: e.message, code: "draft_conflict" }, 409);
     if (e instanceof z.ZodError)
       return json(
         {

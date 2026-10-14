@@ -62,6 +62,7 @@ test("verified customer claims retain purchased ownership and allow another owne
     secondDevice.id,
     { ...sampleDesign(), title: "Across devices" },
     draft.id,
+    draft.revision,
   );
   await assert.rejects(claimPurchaser(db, secondDevice.id, b));
   while (await runRender(db)) {}

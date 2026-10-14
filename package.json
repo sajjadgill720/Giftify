@@ -16,6 +16,7 @@
     "smoke": "tsx scripts/smoke.ts",
     "setup:dev": "tsx scripts/setup-dev.ts",
     "smoke:product": "tsx scripts/product-smoke.ts",
+    "smoke:photos": "tsx scripts/memory-fixture.ts && tsx scripts/photo-smoke.ts",
     "doctor": "tsx scripts/doctor.ts"
   },
   "dependencies": {
@@ -26,6 +27,7 @@
     "pg": "8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "sharp": "0.35.5",
     "zod": "4.6.5"
   },
   "devDependencies": {

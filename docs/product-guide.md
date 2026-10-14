@@ -4,7 +4,7 @@
 
 Run `npm run setup:dev` and `npm run dev`. The development launcher reads APP_URL from root `.env` and chooses that port. This workspace uses http://localhost:3011 because another project occupied port 3000. The generated local operations credential is in the ignored `.env`; it is never printed by setup or the configuration doctor.
 
-Explore `/shop`, choose a product, and open its studio. Personalize and save a draft, select size/finish, review details, and request a quote. Checkout validates recipient details and consent. Without Safepay credentials, the explicit **Save order & review proof** path creates an unpaid order, prepares its private PDF, and takes the buyer to the order page. Payment remains pending. Review the exact PDF and approve it, request a wording revision, or contact support.
+Explore `/shop`, choose a product, and open its studio. Personalize and save a draft, select size/finish, review details, and request a quote. Checkout validates recipient details and consent. Without Safepay credentials, the explicit **Save order & review proof** path creates an unpaid order, prepares its private PDF, and takes the buyer to the order page. Payment remains pending. Review the watermarked proof preview and approve its artwork revision, request a wording revision, or contact support.
 
 `/orders` lists the current purchaser's orders/drafts. `/account` supports real configured Supabase authentication and guest linking; its sign-in is visibly unavailable without configuration. Guest access is seven days. A claimed session requires the corresponding verified customer identity, and an authenticated customer can access previously linked records from another owned device.
 
@@ -21,7 +21,7 @@ In production, development credentials are rejected. Configure Supabase users wi
 - Safepay: SAFEPAY_SECRET_KEY, SAFEPAY_PUBLIC_KEY, SAFEPAY_WEBHOOK_SECRET, PAYMENT_MODE=sandbox, public HTTPS APP_URL and subscribed version 2.0.0 payment events. Live endpoints remain disabled. Webhooks persist to a durable inbox; the external worker performs reconciliation. Local order reads process that order's inbox in embedded development mode.
 - Supabase Auth: SUPABASE_URL and SUPABASE_ANON_KEY, reviewed redirect URLs, email confirmation/SMTP and named operations MFA/roles. No credentialed authentication has been claimed as verified.
 - Private proof mirror: SUPABASE_SERVICE_ROLE_KEY and SUPABASE_STORAGE_BUCKET; bucket must be private. The key is server-only and uploads use checksum-derived keys without accepting arbitrary URLs.
-- PostgreSQL: separate runtime DATABASE_URL and privileged MIGRATION_DATABASE_URL. Apply migrations 001–006 with `npm run db:migrate`, then run web and `npm run worker` separately. Development may use one persistent PGlite process; do not run another process on the same directory concurrently.
+- PostgreSQL: separate runtime DATABASE_URL and privileged MIGRATION_DATABASE_URL. Apply migrations 001–011 with `npm run db:migrate`, then run web and `npm run worker` separately. Development may use one persistent PGlite process; do not run another process on the same directory concurrently.
 
 `npm run doctor` reports environment-variable presence only, without secrets. It does not certify provider acceptance or launch readiness.
 

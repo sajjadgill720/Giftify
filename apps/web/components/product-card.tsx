@@ -5,6 +5,7 @@ import {
   price,
 } from "../../../packages/domain/src/index";
 import { Artwork } from "./artwork";
+import { ShowcaseFrame, showcaseFor } from "./showcase-frame";
 import { Icon } from "./icons";
 import { money } from "../lib/client";
 export function ProductCard({
@@ -14,10 +15,15 @@ export function ProductCard({
   product: (typeof catalog)[number];
   index?: number;
 }) {
+  const example = showcaseFor(product.id);
   return (
     <Link href={"/products/" + product.id} className="product-card">
       <div className={"product-scene scene-" + (index % 6)}>
-        <Artwork design={sampleDesign(product.id)} />
+        {example ? (
+          <ShowcaseFrame kind={example} />
+        ) : (
+          <Artwork design={sampleDesign(product.id)} />
+        )}
         <span className="product-tag">Made personal</span>
         <span className="product-open">
           <Icon name="arrow" />

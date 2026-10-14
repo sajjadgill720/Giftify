@@ -8,7 +8,7 @@ export default function Privacy() {
       sections={[
         {
           title: "What is saved?",
-          text: "The platform stores your artwork wording, product choices, server quotes, order status, submitted recipient name, phone number and domestic address, proof approvals, and support requests. No photographs, audio, CNIC, or unrelated recipient information is requested in this milestone.",
+          text: "The platform stores the photographs you choose to upload, your memory text, names, dates, locations, product choices, quotes, order status, recipient details, approvals and support requests. Original photographs are kept privately for authorized order review. Metadata such as EXIF location information can remain in originals; normalized print images and customer previews have unnecessary metadata stripped. Audio and identity documents are not requested.",
         },
         {
           title: "Who can access my order?",
@@ -16,19 +16,19 @@ export default function Privacy() {
         },
         {
           title: "Where are drafts and proofs stored?",
-          text: "Studio drafts are kept locally and can be saved to the private database. Print PDFs are private database records. An optional configured Supabase private bucket can mirror immutable proof files; no public proof URL is issued.",
+          text: "Studio edits are kept locally and autosaved privately. Photos are stored outside the public website directory in local development, or in a private Supabase bucket when configured for deployment. Customer photo derivatives are capped at 640 pixels; proofs are watermarked JPEGs. Only authorized operators can retrieve order originals or production PDFs, and access is audited. A preview displayed in a browser can still be captured.",
         },
         {
           title: "Is my content used for advertising or AI training?",
-          text: "This milestone does not send customer content to an AI generation service or publish it for marketing. Customer photos and audio are not accepted. Additional purposes would require a separately defined and authorized workflow.",
+          text: "Uploaded photos and written memories are not sent to an AI generation service or published in galleries or advertising. No public sharing is enabled. Any future use for these purposes would need a separate consent workflow.",
         },
         {
           title: "How can I request deletion?",
-          text: "Send an order support request describing the deletion you need. An operator must review it against any required accounting or production records. Automatic retention/deletion jobs and finalized record-retention policies are launch prerequisites, so no automatic deletion period is promised here.",
+          text: "Delete an unfinished saved design from My keepsakes to archive it. Archiving removes it from your active designs; it does not erase purchased snapshots or implement a full personal-data erasure request. For full deletion, send an order support request. An operator must review accounting and production obligations. Automatic retention jobs and finalized retention policies remain launch prerequisites.",
         },
         {
           title: "What external services are involved?",
-          text: "When configured, Supabase provides authentication and private storage, and Safepay provides hosted test checkout. Payment credentials are never exposed to the browser. Supplier and courier integrations remain manual, and only necessary fulfillment details should be shared under reviewed agreements.",
+          text: "When configured, Supabase provides authentication and private storage, and Safepay provides hosted test checkout. Searching for a place sends the search words to MapTiler; applying a map sends its coordinates, style and zoom to MapTiler. Photos and personal messages are not sent to that map provider. Map features remain disabled until credentials and commercial printing rights are configured. Supplier and courier integrations remain manual.",
         },
       ]}
     />

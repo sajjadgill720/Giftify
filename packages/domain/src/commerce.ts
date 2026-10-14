@@ -1,8 +1,14 @@
 import { randomUUID, randomBytes } from "node:crypto";
 import { DB, scoped } from "./db";
 import { designSchema, price, eligible } from "./index";
-import { canonical, hash, pdf } from "../../rendering/src/index";
+import {
+  canonical,
+  hash,
+  pdf,
+  validatePrintText,
+} from "../../rendering/src/index";
 import { mirrorProof } from "../../integrations/src/storage";
+import { validateAssets, designAssetIds, artworkPictures } from "./assets";
 export async function newSession(db: DB) {
   const id = randomUUID(),
     token = randomBytes(32).toString("hex");
@@ -27,7 +33,9 @@ export async function owner(db: DB, token: string) {
 export async function quote(db: DB, ownerId: string, input: unknown) {
   const design = designSchema.parse(input),
     id = randomUUID();
+  validatePrintText(design);
   return scoped(db, ownerId, "guest", async (tx) => {
+    await validateAssets(tx, design, true);
     const r = await tx.query(
       "INSERT INTO art.quotes VALUES ($1,$2,$3,$4,$5,now()+interval '15 minutes') RETURNING *",
       [id, ownerId, design, hash(canonical(design)), price(design)],
@@ -50,6 +58,7 @@ export async function orderFromQuote(db: DB, ownerId: string, quoteId: string) {
     ).rows[0];
     if (!q)
       throw new Error("Quote expired or unavailable. Request a new quote.");
+    await validateAssets(tx, q.design, true);
     const id = randomUUID();
     const r = await tx.query(
       "INSERT INTO art.orders(id,owner_id,quote_id,design,design_hash,price) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT(quote_id) DO NOTHING RETURNING *",
@@ -59,6 +68,11 @@ export async function orderFromQuote(db: DB, ownerId: string, quoteId: string) {
       r.rows[0] ||
       (await tx.query("SELECT * FROM art.orders WHERE quote_id=$1", [quoteId]))
         .rows[0];
+    for (const assetId of designAssetIds(q.design))
+      await tx.query(
+        "INSERT INTO art.order_assets VALUES($1,$2) ON CONFLICT DO NOTHING",
+        [o.id, assetId],
+      );
     await tx.query(
       "INSERT INTO art.jobs(id,order_id,kind) VALUES($1,$2,'render') ON CONFLICT DO NOTHING",
       [randomUUID(), o.id],
@@ -216,7 +230,8 @@ export async function runRender(db: DB, orderId?: string) {
           .rows[0],
     );
     const design = o.proof_design || o.design;
-    const data = await pdf(design);
+    const images = await artworkPictures(db, o.owner_id, design, "ops", true);
+    const data = await pdf(design, images);
     const storage = await mirrorProof(o.id, hash(data), data);
     await scoped(db, "", "ops", async (tx) => {
       const j = (

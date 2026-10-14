@@ -30,6 +30,7 @@ export function SiteHeader() {
             For your person
           </Link>
           <Link href="/help">How it works</Link>
+          <Link href="/design/photo">Create a memory</Link>
         </nav>
         <div className="header-actions">
           <Link
