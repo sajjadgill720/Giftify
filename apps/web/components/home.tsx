@@ -187,14 +187,14 @@ export default function Home() {
           aria-label="Illustrative comparison of supported frame finishes"
         >
           <figure>
-            <ShowcaseFrame kind="photo" finish="oak" />
+            <ShowcaseFrame kind="family" finish="oak" />
             <figcaption>
               <span className="finish-dot oak" />
               Oak effect
             </figcaption>
           </figure>
           <figure>
-            <ShowcaseFrame kind="photo" finish="black" />
+            <ShowcaseFrame kind="pet" finish="black" />
             <figcaption>
               <span className="finish-dot black" />
               Matte black
