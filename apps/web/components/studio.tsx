@@ -240,7 +240,12 @@ export default function Studio({
         </button>
       </div>
       <div className="studio-layout">
-        <div className="studio-preview">
+        <div
+          className="studio-preview"
+          role="region"
+          aria-label="Artwork preview"
+          tabIndex={0}
+        >
           <span className="eyebrow">YOUR STORY, TAKING SHAPE</span>
           <div className="preview-frame-controls">
             <label>

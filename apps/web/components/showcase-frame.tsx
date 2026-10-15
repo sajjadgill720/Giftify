@@ -92,75 +92,61 @@ export function ShowcaseFrame({
   finish?: "oak" | "black";
 }) {
   const [image, title, message, date] = examples[kind];
-  const supplied = image === "place" && finish === "oak";
   return (
     <div
       className={`showcase-frame showcase-${kind === "photo" ? "photo-frame" : kind}`}
     >
-      {supplied ? (
-        <Image
-          src={specialPlace}
-          alt={
-            kind === "photo"
-              ? "Example oak framed sunset photo: Our Favorite Moment"
-              : "Example oak framed Paris map: Where it all began"
-          }
-          sizes="(max-width: 700px) 70vw, 340px"
-          preload={priority}
-        />
-      ) : (
-        <div
-          className={`art-frame ${finish} showcase-composition`}
-          role="img"
-          aria-label={`Example framed artwork: ${title}. ${message}`}
-        >
-          <div className="showcase-paper">
-            {image === "words" ? (
-              <div className="showcase-quote">
-                <span>“</span>
-                <p>
-                  The long walks.
-                  <br />
-                  The quiet mornings.
-                  <br />
-                  The ordinary days
-                  <br />
-                  <em>that became everything.</em>
-                </p>
-                <span>✳</span>
-              </div>
-            ) : (
-              <div
-                className={`showcase-photo ${kind === "family" ? "showcase-collage" : ""}`}
-              >
-                <Image
-                  src={
-                    kind === "family" || kind === "bloom"
-                      ? "/images/examples/family-collage-v2.png"
-                      : kind === "pet"
-                        ? "/images/examples/pet-cat-watercolor.png"
-                        : image === "photo"
-                          ? "/images/examples/couple.png"
-                          : image === "place"
-                            ? specialPlace
-                            : `/images/examples/${image}.png`
-                  }
-                  alt=""
-                  width={1024}
-                  height={1536}
-                  sizes="(max-width: 700px) 70vw, 340px"
-                  preload={priority}
-                />
-              </div>
-            )}
-            <div className="showcase-wording">
-              <strong>{title}</strong>
-              <p>{message}</p>
-              <small>{date}</small>
+      <div
+        className={`art-frame ${finish} showcase-composition`}
+        role="img"
+        aria-label={`Example framed artwork: ${title}. ${message}`}
+      >
+        <div className="showcase-paper">
+          {image === "words" ? (
+            <div className="showcase-quote">
+              <span>“</span>
+              <p>
+                The long walks.
+                <br />
+                The quiet mornings.
+                <br />
+                The ordinary days
+                <br />
+                <em>that became everything.</em>
+              </p>
+              <span>✳</span>
             </div>
+          ) : (
+            <div
+              className={`showcase-photo ${kind === "family" ? "showcase-collage" : ""} ${image === "place" ? "showcase-map-window" : ""}`}
+            >
+              <Image
+                src={
+                  kind === "family" || kind === "bloom"
+                    ? "/images/examples/family-collage-v2.png"
+                    : kind === "pet"
+                      ? "/images/examples/pet-cat-watercolor.png"
+                      : image === "photo"
+                        ? "/images/examples/couple.png"
+                        : image === "place"
+                          ? specialPlace
+                          : `/images/examples/${image}.png`
+                }
+                alt=""
+                width={1024}
+                height={1536}
+                sizes="(max-width: 700px) 70vw, 340px"
+                preload={priority}
+              />
+            </div>
+          )}
+          <div className="showcase-wording">
+            <strong>{title}</strong>
+            <p>{message}</p>
+            <small>{date}</small>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

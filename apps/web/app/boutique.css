@@ -978,6 +978,26 @@ em {
 .showcase-collage span {
   background: #f7f4ee;
 }
+.showcase-map-window img,
+.product-scene .showcase-map-window img {
+  position: absolute;
+  width: 230%;
+  height: 275%;
+  max-width: none;
+  max-height: none;
+  left: -56%;
+  top: -56%;
+  object-fit: fill;
+}
+@media (min-width: 901px) {
+  .studio-preview {
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #a88a66 #eae4d9;
+  }
+}
 .inspiration-note {
   color: #625b51;
   font-size: 11px;
