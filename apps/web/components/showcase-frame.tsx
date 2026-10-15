@@ -94,7 +94,9 @@ export function ShowcaseFrame({
   const [image, title, message, date] = examples[kind];
   const supplied = image === "place" && finish === "oak";
   return (
-    <div className={`showcase-frame showcase-${kind}`}>
+    <div
+      className={`showcase-frame showcase-${kind === "photo" ? "photo-frame" : kind}`}
+    >
       {supplied ? (
         <Image
           src={specialPlace}

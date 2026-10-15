@@ -12,58 +12,40 @@ export default function Home() {
     <>
       <section className="home-hero">
         <div className="hero-copy">
-          <p className="eyebrow">
-            <span /> PERSONAL GIFTS. LASTING MEANING.
-          </p>
+          <p className="eyebrow">Personal art. Lasting meaning.</p>
           <h1>
-            Some moments
+            A place in
             <br />
-            stay with you.
+            your heart.
             <br />
-            <em>Give them a place.</em>
+            <em>A piece for your home.</em>
           </h1>
           <p className="hero-description">
-            Your favorite photo. The place you first met. The little moment that
-            became everything. Turn it into something you can keep, or give.
+            A favorite photograph. The place you first met. A few words only you
+            understand. Make room for the things that matter.
           </p>
           <Link href="/design/photo" className="button">
-            Create your memory <Icon name="arrow" />
+            Create your keepsake <Icon name="arrow" />
           </Link>
           <div className="hero-note">
-            <span className="little-stars">✳ ✳ ✳</span> Your words. Your moment.
-            Beautifully kept.
+            Your photograph. Your words. Your story, framed.
           </div>
         </div>
-        <div className="hero-room">
-          <span className="room-label">THE ART OF REMEMBERING</span>
-          <div className="room-frame main-frame">
-            <ShowcaseFrame kind="photo" priority />
+        <div className="boutique-hero-art">
+          <span className="boutique-art-index">01 / A moment, kept</span>
+          <div className="boutique-hero-frame">
+            <ShowcaseFrame kind="couple" priority />
           </div>
-          <div className="room-frame small-frame">
-            <ShowcaseFrame kind="place" />
-          </div>
-          <div className="room-shelf" />
-          <div className="room-vase">
-            <span />
-            <i />
-            <b />
-          </div>
-          <div className="room-caption">
-            <Icon name="sun" size={16} /> A little warmth for your everyday.
-          </div>
-          <div className="room-sticker">
-            Made
-            <br />
-            <em>personal.</em>
-          </div>
+          <p className="artwork-disclaimer">
+            Illustrative room preview · Example personalization
+          </p>
         </div>
       </section>
       <div className="promise-strip">
         {[
-          ["edit", "Personalize every detail"],
-          ["frame", "A4 & A3 framed art"],
-          ["shield", "Approve before production"],
-          ["truck", "Delivery within Pakistan"],
+          ["edit", "Your photos & personal words"],
+          ["frame", "A4 & A3 print sizes"],
+          ["shield", "Approve your proof before production"],
         ].map(([icon, text]) => (
           <span key={text}>
             <Icon name={icon} size={18} />
@@ -74,8 +56,8 @@ export default function Home() {
       <section className="section memory-category-section">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">WHAT WOULD YOU LOVE TO REMEMBER?</p>
-            <h2>Every memory has a place here.</h2>
+            <p className="eyebrow">Find your story</p>
+            <h2>For the moments that make a life.</h2>
           </div>
           <Link href="/shop" className="text-link">
             Explore all designs <Icon name="arrow" size={16} />
@@ -89,20 +71,10 @@ export default function Home() {
               key={id}
             >
               <span className="category-number">0{i + 1}</span>
-              <Icon
-                name={
-                  id === "place" || id === "travel"
-                    ? "sun"
-                    : id === "words"
-                      ? "edit"
-                      : "frame"
-                }
-                size={29}
-              />
               <h3>{memoryProfiles[id].category}</h3>
               <p>{memoryProfiles[id].hint}</p>
               <span className="text-link">
-                Make it personal <Icon name="arrow" size={14} />
+                Explore <Icon name="arrow" size={14} />
               </span>
             </Link>
           ))}
@@ -111,20 +83,24 @@ export default function Home() {
       <section className="section collection-section">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">THOUGHTFULLY MADE PERSONAL</p>
-            <h2>A story for every wall.</h2>
+            <p className="eyebrow">A considered selection</p>
+            <h2>Memories, given a place.</h2>
           </div>
           <Link className="text-link" href="/shop">
             Explore the collection <Icon name="arrow" size={17} />
           </Link>
         </div>
         <div className="product-grid">
-          {["couple", "family", "pet"]
+          {["place", "photo", "family"]
             .map((id) => catalog.find((p) => p.id === id)!)
             .map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
             ))}
         </div>
+        <p className="collection-imagery-note">
+          Illustrative artwork examples. Your own photographs, location and
+          wording make the finished piece personal.
+        </p>
       </section>
       <section className="story-banner">
         <div className="story-visual">
@@ -136,12 +112,11 @@ export default function Home() {
           </span>
         </div>
         <div className="story-copy">
-          <p className="eyebrow">MORE THAN SOMETHING TO HANG</p>
+          <p className="eyebrow">Thoughtful by nature</p>
           <h2>
-            It’s a feeling.
-            <br />A memory.
+            Some gifts
             <br />
-            <em>A little piece of you.</em>
+            <em>say a little more.</em>
           </h2>
           <p>
             A first home. A hard-earned milestone. Your favorite person. Create
@@ -154,8 +129,8 @@ export default function Home() {
       </section>
       <section className="section how-section">
         <div className="center-heading">
-          <p className="eyebrow">FROM YOUR STORY TO YOUR WALL</p>
-          <h2>Personal, without the complicated.</h2>
+          <p className="eyebrow">The personal touches</p>
+          <h2>From your story to your wall.</h2>
         </div>
         <div className="how-grid">
           {[
@@ -193,6 +168,53 @@ export default function Home() {
               <p>{text}</p>
             </article>
           ))}
+        </div>
+      </section>
+      <section className="section finish-guide">
+        <div
+          className="finish-study"
+          aria-label="Illustrative comparison of supported frame finishes"
+        >
+          <figure>
+            <ShowcaseFrame kind="photo" finish="oak" />
+            <figcaption>Oak effect</figcaption>
+          </figure>
+          <figure>
+            <ShowcaseFrame kind="photo" finish="black" />
+            <figcaption>Matte black</figcaption>
+          </figure>
+          <p className="artwork-disclaimer">
+            Digital finish studies · Illustrative, not product photography
+          </p>
+        </div>
+        <div className="finish-guide-copy">
+          <p className="eyebrow">The setting for your story</p>
+          <h2>
+            A considered size.
+            <br />
+            <em>A finish that feels right.</em>
+          </h2>
+          <p>
+            Compare our two supported finishes and choose the print size that
+            suits your space. Your preview updates as you make it your own.
+          </p>
+          <dl className="size-guide">
+            <div>
+              <dt>A4</dt>
+              <dd>21 × 29.7 cm</dd>
+            </div>
+            <div>
+              <dt>A3</dt>
+              <dd>29.7 × 42 cm</dd>
+            </div>
+          </dl>
+          <p className="fine-print">
+            Dimensions describe the print area. Final frame materials and outer
+            dimensions are still being validated.
+          </p>
+          <Link href="/products/photo" className="text-link">
+            Explore sizes & finishes <Icon name="arrow" size={16} />
+          </Link>
         </div>
       </section>
       <section className="occasion-section section">

@@ -1,4 +1,5 @@
 import "./theme.css";
+import "./boutique.css";
 import Link from "next/link";
 import { SiteHeader } from "../components/header";
 import { Icon } from "../components/icons";
@@ -39,6 +40,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <h4>Here to help</h4>
               <Link href="/help">How it works</Link>
               <Link href="/delivery">Delivery & proof approval</Link>
+              <Link href="/terms">Returns & order terms</Link>
               <Link href="/orders">My orders & support</Link>
             </div>
             <div className="footer-motto">

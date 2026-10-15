@@ -24,7 +24,7 @@ export function ProductCard({
         ) : (
           <Artwork design={sampleDesign(product.id)} />
         )}
-        <span className="product-tag">Made personal</span>
+        <span className="product-tag">Illustrative example</span>
         <span className="product-open">
           <Icon name="arrow" />
         </span>
