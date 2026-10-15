@@ -1,4 +1,6 @@
-import type { CSSProperties } from "react";
+"use client";
+import { useState, type CSSProperties } from "react";
+import { MemoryText, type TextKey } from "./memory-text";
 import { Design, sampleDesign } from "../../../packages/domain/src/index";
 import { svg } from "../../../packages/rendering/src/representation";
 import { MemoryImages } from "./memory-images";
@@ -12,6 +14,7 @@ export function Artwork({
   assetEndpoint,
   inspirationWhenEmpty = false,
   onPhotoPosition,
+  onTextPosition,
 }: {
   design?: Design;
   framed?: boolean;
@@ -21,8 +24,26 @@ export function Artwork({
   assetEndpoint?: string;
   inspirationWhenEmpty?: boolean;
   onPhotoPosition?: (index: number, position: { x: number; y: number }) => void;
+  onTextPosition?: (key: TextKey, y: number) => void;
 }) {
   const d = design || sampleDesign();
+  const [textPreview, setTextPreview] = useState<{
+    key: TextKey;
+    y: number;
+  } | null>(null);
+  const preview =
+    textPreview && d.memory
+      ? {
+          ...d,
+          memory: {
+            ...d.memory,
+            textPositions: {
+              ...d.memory.textPositions,
+              [textPreview.key]: textPreview.y,
+            },
+          },
+        }
+      : d;
   const example =
     d.memory?.mode === "place"
       ? "place"
@@ -60,12 +81,21 @@ export function Artwork({
           />
         ) : (
           <div className="art-svg">
-            <div dangerouslySetInnerHTML={{ __html: svg(d) }} />
+            <div dangerouslySetInnerHTML={{ __html: svg(preview) }} />
             {d.memory && (
               <MemoryImages
                 design={d}
                 endpoint={assetEndpoint}
                 onPhotoPosition={onPhotoPosition}
+              />
+            )}
+            {d.memory && onTextPosition && (
+              <MemoryText
+                design={preview}
+                onCommit={onTextPosition}
+                onPreview={(key, y) =>
+                  setTextPreview(y === null ? null : { key, y })
+                }
               />
             )}
           </div>

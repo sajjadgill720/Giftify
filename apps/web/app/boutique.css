@@ -678,6 +678,58 @@ em {
   letter-spacing: 1.2px;
   font-size: 10px;
 }
+.studio-preview > .preview-frame-controls {
+  margin: 20px 0 8px;
+  text-align: left;
+}
+.memory-text-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.memory-text-handle {
+  position: absolute;
+  left: 6%;
+  width: 88%;
+  min-height: 24px;
+  padding: 0;
+  border: 1px dashed transparent;
+  background: transparent;
+  border-radius: 3px;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: ns-resize;
+}
+.memory-text-handle:hover,
+.memory-text-handle:focus-visible {
+  border-color: #78583c;
+  background: #78583c0a;
+}
+.text-drag-label {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  font:
+    10px/1.5 Arial,
+    sans-serif;
+  padding: 2px 6px;
+  background: #382c25;
+  color: #fff8ef;
+  border-radius: 3px;
+  opacity: 0;
+  pointer-events: none;
+}
+.memory-text-handle:hover .text-drag-label,
+.memory-text-handle:focus-visible .text-drag-label {
+  opacity: 1;
+}
+.text-position-hint {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #62503e;
+  margin: 14px 0;
+}
 .studio-preview .fine-print,
 .preview-tools {
   color: #625b51;
@@ -895,6 +947,63 @@ input[type="range"] {
 .memory-appearance summary {
   font-weight: 500;
   font-size: 14px;
+}
+.photo-edit-panel > summary,
+.memory-appearance > summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  min-height: 78px;
+  cursor: pointer;
+  list-style: none;
+  border: 1px solid #bca184;
+  border-radius: 5px;
+  background: #ecdfce;
+  color: #493528;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.photo-edit-panel > summary::-webkit-details-marker,
+.memory-appearance > summary::-webkit-details-marker {
+  display: none;
+}
+.photo-edit-panel > summary:hover,
+.memory-appearance > summary:hover {
+  background: #e2cfb7;
+  border-color: #78583c;
+}
+.editor-disclosure-copy {
+  flex: 1;
+  min-width: 0;
+}
+.editor-disclosure-copy strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.editor-disclosure-copy small {
+  display: block;
+  color: #65503e;
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+.editor-disclosure-chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+details[open] > summary .editor-disclosure-chevron {
+  transform: rotate(180deg);
+}
+.field .optional-label,
+.field > span.optional-label {
+  display: inline;
+  font-size: 12px;
+  font-weight: 400;
+  color: #746d63;
 }
 .photo-manager-heading strong {
   font-weight: 500;

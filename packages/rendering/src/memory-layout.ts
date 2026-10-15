@@ -233,13 +233,25 @@ export function memoryLayout(d: Design): ArtworkLayout {
       border: false,
     };
   if (m.mode === "words") {
-    lines.push({ text: d.title, y: h * 0.19, size: w * 0.04, font });
+    lines.push({
+      text: d.title,
+      y: h * 0.19,
+      size: w * 0.04,
+      font,
+      editKey: "title",
+    });
     const story = wrap(m.narrative || "Your story belongs here.");
     story.forEach((text, i) =>
       lines.push({ text, y: h * 0.32 + i * h * 0.04, size: w * 0.021, font }),
     );
   } else {
-    lines.push({ text: d.title, y: h * 0.715, size: w * 0.036, font });
+    lines.push({
+      text: d.title,
+      y: h * 0.715,
+      size: w * 0.036,
+      font,
+      editKey: "title",
+    });
     if (!pictures.length)
       lines.push({
         text:
@@ -256,16 +268,36 @@ export function memoryLayout(d: Design): ArtworkLayout {
     (d.template === "birthday" && m.age !== undefined
       ? `Celebrating ${m.age} beautiful years`
       : "");
-  if (names) lines.push({ text: names, y: h * 0.78, size: w * 0.025, font });
+  if (names)
+    lines.push({
+      text: names,
+      y: h * 0.78,
+      size: w * 0.025,
+      font,
+      editKey: "names",
+    });
   lines.push({
     text: d.subtitle,
+    editKey: "message",
     y: h * (names ? 0.83 : 0.795),
     size: w * 0.018,
     font: "sans",
   });
   if (m.place)
-    lines.push({ text: m.place, y: h * 0.87, size: w * 0.014, font: "sans" });
-  lines.push({ text: d.date, y: h * 0.92, size: w * 0.014, font: "sans" });
+    lines.push({
+      text: m.place,
+      y: h * 0.87,
+      size: w * 0.014,
+      font: "sans",
+      editKey: "place",
+    });
+  lines.push({
+    text: d.date,
+    y: h * 0.92,
+    size: w * 0.014,
+    font: "sans",
+    editKey: "date",
+  });
   if (d.template === "couple" && m.mode !== "words")
     shapes.push({
       path: `M ${w / 2} ${h * 0.67} c ${-w * 0.035} ${-h * 0.025} ${-w * 0.055} ${h * 0.015} 0 ${h * 0.025} c ${w * 0.055} ${-h * 0.01} ${w * 0.035} ${-h * 0.05} 0 ${-h * 0.025} Z`,
@@ -300,6 +332,24 @@ export function memoryLayout(d: Design): ArtworkLayout {
       line.y =
         h * (start + ((line.y / h - 0.715) * (0.94 - start)) / (0.92 - 0.715));
     }
+  }
+  const anchor = lines.find((line) => line.editKey === "title")?.y ?? h * 0.715;
+  const minimumTextY = pictures.length
+    ? Math.max(...pictures.map((p) => (p.y + p.height) / h)) + 0.025
+    : 0.08;
+  for (const line of lines) {
+    if (!line.editKey) continue;
+    const custom = m.textPositions?.[line.editKey];
+    line.y =
+      custom !== undefined
+        ? Math.max(minimumTextY, Math.min(0.94, custom)) * h
+        : Math.max(
+            h * 0.08,
+            Math.min(
+              h * 0.94,
+              anchor + (line.y - anchor) * (m.textSpacing ?? 1),
+            ),
+          );
   }
   return {
     w,

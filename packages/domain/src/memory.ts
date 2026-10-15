@@ -53,6 +53,17 @@ export const memorySchema = z
     font: z.enum(["classic", "modern", "editorial", "bold", "mono"]),
     titleScale: z.number().min(0.75).max(2.4).optional(),
     textScale: z.number().min(0.75).max(1.8).optional(),
+    textSpacing: z.number().min(0.5).max(1.2).optional(),
+    textPositions: z
+      .object({
+        title: z.number().min(0.08).max(0.94).optional(),
+        names: z.number().min(0.08).max(0.94).optional(),
+        message: z.number().min(0.08).max(0.94).optional(),
+        place: z.number().min(0.08).max(0.94).optional(),
+        date: z.number().min(0.08).max(0.94).optional(),
+      })
+      .strict()
+      .optional(),
     photoHeight: z.number().min(0.4).max(0.65).optional(),
     layout: z.enum(["portrait", "gallery", "collage", "fullbleed"]),
     marker: z.enum(["heart", "pin", "none"]),

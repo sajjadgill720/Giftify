@@ -39,7 +39,13 @@ export type ArtworkLayout = {
   background: string;
   border: boolean;
   shapes: Shape[];
-  lines: { text: string; y: number; size: number; font: string }[];
+  lines: {
+    text: string;
+    y: number;
+    size: number;
+    font: string;
+    editKey?: "title" | "names" | "message" | "place" | "date";
+  }[];
   pictures?: Picture[];
 };
 export function layout(d: Design): ArtworkLayout {

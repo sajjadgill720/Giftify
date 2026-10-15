@@ -102,6 +102,51 @@ test("gallery paper color covers both the outer border and the area beneath phot
   }
 });
 
+test("text spacing and individual positions survive validation and change preview and print geometry", async () => {
+  const d = photoDesign();
+  const initial = memoryLayout(d);
+  const before = canonical(d);
+  d.memory!.textSpacing = 0.5;
+  const compact = memoryLayout(d);
+  const date = (l: ReturnType<typeof memoryLayout>) =>
+    l.lines.find((line) => line.editKey === "date")!;
+  assert.ok(date(compact).y < date(initial).y);
+  d.memory!.textPositions = { message: 0.75, date: 0.8 };
+  assert.equal(designSchema.safeParse(d).success, true);
+  const moved = memoryLayout(d);
+  assert.equal(date(moved).y, moved.h * 0.8);
+  assert.equal(
+    moved.lines.find((line) => line.editKey === "message")!.y,
+    moved.h * 0.75,
+  );
+  assert.notEqual(before, canonical(d));
+  assert.ok(svg(d).includes(`y="${moved.h * 0.8}"`));
+  const image = await sharp({
+    create: { width: 100, height: 100, channels: 3, background: "#888888" },
+  })
+    .jpeg()
+    .toBuffer();
+  assert.equal((await pdf(d, [image])).subarray(0, 4).toString(), "%PDF");
+  assert.equal(
+    designSchema.safeParse({
+      ...d,
+      memory: { ...d.memory, textPositions: { date: 1.2 } },
+    }).success,
+    false,
+  );
+  assert.equal(
+    designSchema.safeParse({ ...d, memory: { ...d.memory, textSpacing: 10 } })
+      .success,
+    false,
+  );
+  d.memory!.textPositions = { title: 0.08 };
+  const safe = memoryLayout(d);
+  assert.ok(
+    safe.lines.find((line) => line.editKey === "title")!.y >
+      safe.pictures![0].y + safe.pictures![0].height,
+  );
+});
+
 test("custom styling is bounded and cannot inject arbitrary SVG or CSS", () => {
   const d = photoDesign();
   assert.equal(

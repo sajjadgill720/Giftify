@@ -242,6 +242,37 @@ export default function Studio({
       <div className="studio-layout">
         <div className="studio-preview">
           <span className="eyebrow">YOUR STORY, TAKING SHAPE</span>
+          <div className="preview-frame-controls">
+            <label>
+              Frame size
+              <select
+                aria-label="Preview frame size"
+                value={design.size}
+                onChange={(e) =>
+                  edit({ ...design, size: e.target.value as Design["size"] })
+                }
+              >
+                <option value="A4">A4 · 21 × 29.7 cm</option>
+                <option value="A3">A3 · 29.7 × 42 cm</option>
+              </select>
+            </label>
+            <label>
+              Frame finish
+              <select
+                aria-label="Preview frame finish"
+                value={design.finish}
+                onChange={(e) =>
+                  edit({
+                    ...design,
+                    finish: e.target.value as Design["finish"],
+                  })
+                }
+              >
+                <option value="oak">Natural oak effect</option>
+                <option value="black">Matte black</option>
+              </select>
+            </label>
+          </div>
           <div
             className={"studio-art memory-scene-" + scene}
             style={
@@ -254,6 +285,21 @@ export default function Studio({
             <Artwork
               design={design}
               inspirationWhenEmpty
+              onTextPosition={
+                step === 0 && design.memory
+                  ? (key, y) =>
+                      edit({
+                        ...design,
+                        memory: {
+                          ...design.memory!,
+                          textPositions: {
+                            ...design.memory!.textPositions,
+                            [key]: y,
+                          },
+                        },
+                      })
+                  : undefined
+              }
               onPhotoPosition={
                 step === 0 && design.memory
                   ? (index, position) => {
@@ -289,37 +335,12 @@ export default function Studio({
               </button>
             ))}
           </div>
-          <div className="preview-frame-controls">
-            <label>
-              Frame size
-              <select
-                aria-label="Preview frame size"
-                value={design.size}
-                onChange={(e) =>
-                  edit({ ...design, size: e.target.value as Design["size"] })
-                }
-              >
-                <option value="A4">A4 · 21 × 29.7 cm</option>
-                <option value="A3">A3 · 29.7 × 42 cm</option>
-              </select>
-            </label>
-            <label>
-              Frame finish
-              <select
-                aria-label="Preview frame finish"
-                value={design.finish}
-                onChange={(e) =>
-                  edit({
-                    ...design,
-                    finish: e.target.value as Design["finish"],
-                  })
-                }
-              >
-                <option value="oak">Natural oak effect</option>
-                <option value="black">Matte black</option>
-              </select>
-            </label>
-          </div>
+          {step === 0 && design.memory && (
+            <p className="text-position-hint">
+              Drag text up or down to adjust spacing. Use arrow keys for precise
+              movement.
+            </p>
+          )}
           <div className="preview-tools">
             <span>
               {design.size} ·{" "}
@@ -441,7 +462,12 @@ export default function Studio({
               ].map((field) => (
                 <label key={field.key} className="field">
                   <span>
-                    {field.label}
+                    <span>
+                      {field.label}
+                      {field.key !== "title" && (
+                        <span className="optional-label"> (optional)</span>
+                      )}
+                    </span>
                     <small>
                       {design[field.key as "title"].length}/{field.max}
                     </small>
@@ -451,7 +477,11 @@ export default function Studio({
                     onChange={(e) =>
                       update(field.key as keyof Design, e.target.value)
                     }
-                    placeholder={field.placeholder}
+                    placeholder={
+                      field.key === "title"
+                        ? field.placeholder
+                        : "Optional · " + field.placeholder
+                    }
                     maxLength={field.max}
                   />
                   <span className="field-hint">{field.hint}</span>

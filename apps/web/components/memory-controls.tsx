@@ -9,7 +9,10 @@ import {
   Photo,
   selectMemoryMode,
 } from "../../../packages/domain/src/memory";
-import { memoryPictures } from "../../../packages/rendering/src/memory-layout";
+import {
+  memoryLayout,
+  memoryPictures,
+} from "../../../packages/rendering/src/memory-layout";
 import { api, ApiError } from "../lib/client";
 import { Icon } from "./icons";
 import { PrintQualityExplainer } from "./print-quality-explainer";
@@ -500,7 +503,18 @@ export function MemoryControls({
                   </div>
                   {active && (
                     <details className="photo-edit-panel">
-                      <summary>Crop, rotate & filter your photo</summary>
+                      <summary>
+                        <Icon name="edit" size={20} />
+                        <span className="editor-disclosure-copy">
+                          <strong>Edit your photo</strong>
+                          <small>Crop, rotate & filter your photo</small>
+                        </span>
+                        <Icon
+                          name="down"
+                          size={18}
+                          className="editor-disclosure-chevron"
+                        />
+                      </summary>
                       <p className="eyebrow">
                         PHOTOGRAPH {selected + 1} · YOUR PERFECT CROP
                       </p>
@@ -607,21 +621,27 @@ export function MemoryControls({
             ? "Family name"
             : design.template === "birthday"
               ? "Birthday person’s name"
-              : "Names"}
+              : "Names"}{" "}
+        <span className="optional-label">(optional)</span>
         <input
           value={m.names}
           maxLength={48}
           placeholder={
-            design.template === "pet" ? "e.g. Milo" : "e.g. Ayesha & Hamza"
+            design.template === "pet"
+              ? "Optional · e.g. Cleo"
+              : design.template === "family"
+                ? "Optional · e.g. The Khan family"
+                : "Optional · e.g. Ayesha & Hamza"
           }
           onChange={(e) => update({ names: e.target.value })}
         />
       </label>
       {m.mode === "photo" && design.template === "birthday" && (
         <label className="field">
-          Age you’re celebrating
+          Age you’re celebrating (optional)
           <input
             type="number"
+            placeholder="Optional · e.g. 30"
             min={0}
             max={120}
             value={m.age ?? ""}
@@ -641,16 +661,24 @@ export function MemoryControls({
       <label className="field">
         {design.template === "travel"
           ? "Destination"
-          : "Location or a meaningful place"}
+          : "Location or a meaningful place"}{" "}
+        <span className="optional-label">(optional)</span>
         <input
           value={m.place}
           maxLength={64}
-          placeholder="e.g. Paris, France"
+          placeholder="Optional · e.g. Paris, France"
           onChange={(e) => update({ place: e.target.value })}
         />
       </label>
       <details className="memory-appearance" open>
-        <summary>Layout, fonts & colours</summary>
+        <summary>
+          <Icon name="frame" size={20} />
+          <span className="editor-disclosure-copy">
+            <strong>Personalize your design</strong>
+            <small>Layout, fonts & colours</small>
+          </span>
+          <Icon name="down" size={18} className="editor-disclosure-chevron" />
+        </summary>
         <div className="memory-design-options">
           <label className="field">
             Artwork layout
@@ -857,6 +885,69 @@ export function MemoryControls({
                 onChange={(e) => update({ textScale: Number(e.target.value) })}
               />
             </label>
+            <label className="field">
+              Text spacing · {Math.round((m.textSpacing ?? 1) * 100)}%
+              <input
+                type="range"
+                min={0.5}
+                max={1.2}
+                step={0.05}
+                value={m.textSpacing ?? 1}
+                onChange={(e) =>
+                  update({
+                    textSpacing: Number(e.target.value),
+                    textPositions: undefined,
+                  })
+                }
+              />
+              <span className="field-hint">
+                Bring the wording closer together, or drag each text block up
+                and down in your preview.
+              </span>
+            </label>
+            <button
+              type="button"
+              className="text-button"
+              onClick={() =>
+                update({ textSpacing: 1, textPositions: undefined })
+              }
+            >
+              Reset text positions & spacing
+            </button>
+            <details className="text-position-controls">
+              <summary>Fine-tune individual text positions</summary>
+              {memoryLayout(design)
+                .lines.filter((line) => line.editKey && line.text.trim())
+                .map((line) => (
+                  <label className="field" key={line.editKey}>
+                    {
+                      {
+                        title: "Headline",
+                        names: "Names",
+                        message: "Message",
+                        place: "Location",
+                        date: "Date",
+                      }[line.editKey!]
+                    }{" "}
+                    vertical position
+                    <input
+                      type="range"
+                      min={8}
+                      max={94}
+                      step={0.5}
+                      value={(line.y / memoryLayout(design).h) * 100}
+                      onChange={(e) =>
+                        update({
+                          textPositions: {
+                            ...m.textPositions,
+                            [line.editKey!]: Number(e.target.value) / 100,
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+            </details>
           </>
         )}
         <button
@@ -867,6 +958,8 @@ export function MemoryControls({
               backgroundColor: undefined,
               titleScale: 1,
               textScale: 1,
+              textSpacing: 1,
+              textPositions: undefined,
               font: "classic",
             })
           }
