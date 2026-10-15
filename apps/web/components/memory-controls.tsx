@@ -178,6 +178,38 @@ export function MemoryControls({
   });
   return (
     <div className="memory-controls">
+      <fieldset className="memory-source-choices">
+        <legend>Start with your memory</legend>
+        <div className="memory-source-grid" aria-label="Memory source">
+          {(
+            [
+              ["photo", "Favorite photo", "Add your photograph", "frame"],
+              [
+                "place",
+                "Special place",
+                "Find a meaningful location",
+                "search",
+              ],
+              ["words", "In your words", "Tell your story", "edit"],
+            ] as const
+          ).map(([mode, label, hint, icon]) => (
+            <button
+              type="button"
+              key={mode}
+              className={m.mode === mode ? "selected" : ""}
+              aria-label={label}
+              aria-pressed={m.mode === mode}
+              disabled={busy}
+              onClick={() => update(selectMemoryMode(m, mode))}
+            >
+              <Icon name={icon} size={20} />
+              <strong>{label}</strong>
+              <span>{hint}</span>
+              <Icon name={m.mode === mode ? "check" : "arrow"} size={15} />
+            </button>
+          ))}
+        </div>
+      </fieldset>
       <label className="field">
         Choose your kind of memory
         <select
@@ -223,25 +255,6 @@ export function MemoryControls({
       <p className="field-hint">
         Switch designs freely. Your photos and personal details stay with you.
       </p>
-      <div className="memory-mode-tabs" aria-label="Memory source">
-        {(
-          [
-            ["photo", "Favorite photo"],
-            ["place", "Special place"],
-            ["words", "In your words"],
-          ] as const
-        ).map(([mode, label]) => (
-          <button
-            key={mode}
-            className={m.mode === mode ? "selected" : ""}
-            aria-pressed={m.mode === mode}
-            disabled={busy}
-            onClick={() => update(selectMemoryMode(m, mode))}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
       {m.mode === "words" ? (
         <label className="field">
           Describe your memory

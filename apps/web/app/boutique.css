@@ -690,6 +690,70 @@ em {
 .showcase-switch {
   background: #e9e3d9;
 }
+.memory-source-choices {
+  border: 0;
+  padding: 0;
+  margin: 0 0 28px;
+  min-width: 0;
+}
+.memory-source-choices legend {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 14px;
+  color: var(--espresso);
+}
+.memory-source-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.memory-source-grid button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 18px 14px;
+  min-height: 160px;
+  border: 1px solid #cdbba5;
+  border-radius: 5px;
+  background: #f4ede3;
+  color: #493528;
+  text-align: left;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.memory-source-grid button strong {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.memory-source-grid button span {
+  font-size: 11px;
+  line-height: 1.55;
+}
+.memory-source-grid button > svg:last-child {
+  margin-top: auto;
+}
+.memory-source-grid button:hover:not(:disabled) {
+  border-color: #78583c;
+  background: #e9dac7;
+}
+.memory-source-grid button.selected {
+  background: #594133;
+  border-color: #594133;
+  color: #fff8ef;
+  box-shadow: 0 5px 12px #382c2512;
+}
+.memory-source-grid button.selected:hover:not(:disabled) {
+  background: #493528;
+}
+.memory-source-grid button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
 .memory-mode-tabs button,
 .scene-switch button {
   color: #625b51;
@@ -1104,6 +1168,30 @@ input[type="range"] {
   .studio-preview {
     position: static;
     padding: 24px 18px;
+  }
+  .memory-source-grid {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+  .memory-source-grid button {
+    display: grid;
+    grid-template-columns: 22px 1fr 16px;
+    gap: 4px 12px;
+    min-height: 78px;
+    padding: 16px;
+    align-items: center;
+  }
+  .memory-source-grid button > svg:first-child {
+    grid-row: 1 / 3;
+  }
+  .memory-source-grid button span {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .memory-source-grid button > svg:last-child {
+    grid-column: 3;
+    grid-row: 1 / 3;
+    margin: 0;
   }
   .studio-layout {
     grid-template-columns: minmax(0, 1fr);
