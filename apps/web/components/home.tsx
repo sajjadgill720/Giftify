@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import atelierInterior from "../public/images/examples/atelier-interior.png";
 import { catalog } from "../../../packages/domain/src/index";
 import { ProductCard } from "./product-card";
 import { Icon } from "./icons";
@@ -32,12 +34,20 @@ export default function Home() {
           </div>
         </div>
         <div className="boutique-hero-art">
+          <Image
+            className="atelier-backdrop"
+            src={atelierInterior}
+            alt=""
+            fill
+            sizes="(max-width: 600px) 100vw, 50vw"
+            preload
+          />
           <span className="boutique-art-index">01 / A moment, kept</span>
           <div className="boutique-hero-frame">
             <ShowcaseFrame kind="couple" priority />
           </div>
           <p className="artwork-disclaimer">
-            Illustrative room preview · Example personalization
+            Illustrative interior · Example personalization
           </p>
         </div>
       </section>
@@ -108,12 +118,18 @@ export default function Home() {
       </section>
       <section className="story-banner">
         <div className="story-visual">
-          <ShowcaseFrame kind="arch" />
-          <span className="handwritten">
-            a moment,
-            <br />
-            made yours.
-          </span>
+          <div className="story-frame-pair">
+            <div className="story-family-frame">
+              <ShowcaseFrame kind="family" finish="black" />
+            </div>
+            <div className="story-pet-frame">
+              <ShowcaseFrame kind="pet" />
+            </div>
+          </div>
+          <p className="story-scene-caption">
+            Different stories. Equally personal.
+            <span>Illustrative artwork examples</span>
+          </p>
         </div>
         <div className="story-copy">
           <p className="eyebrow">Thoughtful by nature</p>

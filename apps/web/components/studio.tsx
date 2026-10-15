@@ -204,7 +204,7 @@ export default function Studio({
     setBusy(true);
     try {
       const q = await api("quotes", design);
-      router.push("/checkout/" + q.id);
+      router.push("/checkout/" + q.id + (draft ? "?draft=" + draft.id : ""));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -661,7 +661,7 @@ export default function Studio({
               {busy
                 ? "Preparing…"
                 : step === 2
-                  ? "Get my price quote"
+                  ? "Review delivery & total"
                   : "Continue"}
               <Icon name="arrow" />
             </button>

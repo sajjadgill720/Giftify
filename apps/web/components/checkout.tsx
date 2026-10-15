@@ -1,19 +1,22 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Artwork } from "./artwork";
 import { Icon } from "./icons";
 import { api, money, ApiError } from "../lib/client";
 import { catalog } from "../../../packages/domain/src/index";
 export default function Checkout({ quoteId }: { quoteId: string }) {
+  const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter(),
+    params = useSearchParams(),
     [q, setQ] = useState<any>(),
     [config, setConfig] = useState<any>(),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
+    [summaryOpen, setSummaryOpen] = useState(true),
     [fields, setFields] = useState<Record<string, string>>({}),
-    [remaining, setRemaining] = useState(0),
+    [remaining, setRemaining] = useState<number | null>(null),
     [address, setAddress] = useState({
       name: "",
       phone: "",
@@ -23,10 +26,31 @@ export default function Checkout({ quoteId }: { quoteId: string }) {
       confirmed: false,
     });
   useEffect(() => {
+    if (Object.keys(fields).length)
+      formRef.current
+        ?.querySelector<HTMLInputElement>("[aria-invalid='true']")
+        ?.focus();
+  }, [fields]);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 900px)");
+    const update = () => setSummaryOpen(!media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  useEffect(() => {
     Promise.all([api("quotes/" + quoteId), api("config")])
       .then(([quote, configuration]) => {
         setQ(quote);
         setConfig(configuration);
+        setRemaining(
+          Math.max(
+            0,
+            Math.ceil(
+              (new Date(quote.expires_at).getTime() - Date.now()) / 1000,
+            ),
+          ),
+        );
       })
       .catch((e) => setError(e.message));
   }, [quoteId]);
@@ -45,6 +69,7 @@ export default function Checkout({ quoteId }: { quoteId: string }) {
   }, [q]);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy || !config || remaining === null || remaining === 0) return;
     setError("");
     setFields({});
     setBusy(true);
@@ -67,6 +92,13 @@ export default function Checkout({ quoteId }: { quoteId: string }) {
       setBusy(false);
     }
   }
+  const originDraft = params.get("draft");
+  const editHref =
+    "/design/" +
+    (q?.design.template || "photo") +
+    (originDraft && /^[0-9a-f-]{36}$/i.test(originDraft)
+      ? "?draft=" + originDraft
+      : "");
   if (!q)
     return (
       <section className="section narrow">
@@ -87,37 +119,57 @@ export default function Checkout({ quoteId }: { quoteId: string }) {
     );
   return (
     <section className="section checkout-page">
-      <Link
-        href={"/design/" + q.design.template}
-        className="text-link back-link"
-      >
+      <Link href={editHref} className="text-link back-link">
         ← Back to your studio
       </Link>
       <div className="checkout-heading">
-        <p className="eyebrow">ONE STEP CLOSER TO SOMETHING PERSONAL</p>
+        <p className="eyebrow">The final details</p>
         <h1>
-          Your keepsake, <em>made yours.</em>
+          A thoughtful finish <em>to your story.</em>
         </h1>
         <p>
-          <Icon name="shield" size={16} /> Private details · Exact proof
-          approval · Test checkout
+          Check your artwork, confirm delivery, then review your private proof.
         </p>
       </div>
-      {!remaining && (
+      <ol className="checkout-journey" aria-label="Order journey">
+        <li aria-current="step">
+          <span>01</span>
+          <strong>Delivery details</strong>
+        </li>
+        <li>
+          <span>02</span>
+          <strong>
+            {config?.paymentReady ? "Test payment" : "Save unpaid order"}
+          </strong>
+        </li>
+        <li>
+          <span>03</span>
+          <strong>Approve your proof</strong>
+        </li>
+      </ol>
+      <div className="checkout-test-note">
+        <Icon name="shield" size={18} />
+        <p>
+          <strong>Preview store · Test mode</strong> No live payment is
+          collected. Your proof must be approved before production.
+        </p>
+      </div>
+      {remaining === 0 && (
         <div className="error-message" role="alert">
           This quote has expired.{" "}
-          <Link href={"/design/" + q.design.template}>
-            Return to the studio for a fresh quote.
-          </Link>
+          <Link href={editHref}>Return to the studio for a fresh quote.</Link>
         </div>
       )}
       <div className="checkout-layout">
-        <form onSubmit={submit} className="checkout-form">
+        <form ref={formRef} onSubmit={submit} className="checkout-form">
           <div className="form-heading">
             <span className="number-circle">1</span>
             <div>
-              <h2>Where should it go?</h2>
-              <p>Domestic delivery within our four pilot cities.</p>
+              <h2>Delivery details</h2>
+              <p>
+                Pakistan · Islamabad, Rawalpindi, Lahore & Karachi. All fields
+                are required.
+              </p>
             </div>
           </div>
           <div className="form-grid">
@@ -156,9 +208,12 @@ export default function Checkout({ quoteId }: { quoteId: string }) {
                   placeholder={f.placeholder}
                   maxLength={f.key === "name" ? 80 : 16}
                   aria-invalid={!!fields["address." + f.key]}
+                  aria-describedby={
+                    fields["address." + f.key] ? "error-" + f.key : undefined
+                  }
                 />
                 {fields["address." + f.key] && (
-                  <small className="field-error">
+                  <small className="field-error" id={"error-" + f.key}>
                     {fields["address." + f.key]}
                   </small>
                 )}
@@ -175,9 +230,15 @@ export default function Checkout({ quoteId }: { quoteId: string }) {
               value={address.line}
               onChange={(e) => setAddress({ ...address, line: e.target.value })}
               placeholder="House, street, neighborhood"
+              aria-invalid={!!fields["address.line"]}
+              aria-describedby={
+                fields["address.line"] ? "error-line" : undefined
+              }
             />
             {fields["address.line"] && (
-              <small className="field-error">{fields["address.line"]}</small>
+              <small className="field-error" id="error-line">
+                {fields["address.line"]}
+              </small>
             )}
           </label>
           <div className="form-grid">
@@ -216,7 +277,11 @@ export default function Checkout({ quoteId }: { quoteId: string }) {
           <div className="form-heading payment-heading">
             <span className="number-circle">2</span>
             <div>
-              <h2>A clear next step.</h2>
+              <h2>
+                {config?.paymentReady
+                  ? "Continue securely"
+                  : "Review before production"}
+              </h2>
               <p>
                 {config?.paymentReady
                   ? "You’ll continue to Safepay’s hosted test checkout."
@@ -229,7 +294,7 @@ export default function Checkout({ quoteId }: { quoteId: string }) {
             <p>
               {config?.paymentReady
                 ? "Payment is verified by the provider. Your card details stay on their hosted checkout. No real money is collected in test mode."
-                : "Test payment is not connected yet. Saving creates an unpaid order with a private proof. No payment or shipping will be simulated."}
+                : "Payment setup is pending. Save an unpaid order to review your private proof; this does not confirm payment or dispatch."}
             </p>
           </div>
           {error && (
@@ -237,24 +302,41 @@ export default function Checkout({ quoteId }: { quoteId: string }) {
               {error}
             </p>
           )}
-          <button className="button wide" disabled={busy || !remaining}>
-            {busy
-              ? "Saving your order…"
-              : config?.paymentReady
-                ? "Continue to test payment"
-                : "Save order & review proof"}
-            <Icon name="arrow" />
-          </button>
+          <div className="checkout-submit">
+            <div className="checkout-action-total">
+              <span>Test order total</span>
+              <strong>{money(q.price.total)}</strong>
+            </div>
+            <button
+              className="button wide"
+              disabled={busy || !remaining || !config}
+            >
+              {busy
+                ? "Saving your order…"
+                : config?.paymentReady
+                  ? "Continue to test payment"
+                  : "Save unpaid order & view proof"}
+              <Icon name="arrow" />
+            </button>
+            <span className="checkout-action-hint">
+              {config?.paymentReady
+                ? "Next: Safepay hosted test checkout"
+                : "No payment is collected at this step."}
+            </span>
+          </div>
           <p className="fine-print">
             By continuing you accept the <Link href="/terms">pilot terms</Link>.
             Approval of your proof is a separate step.
           </p>
         </form>
-        <aside className="checkout-summary">
+        <aside className="checkout-summary" aria-label="Your order summary">
+          <p className="eyebrow">Made personal by you</p>
           <h3>Your personal keepsake</h3>
           <div className="summary-product">
-            <Artwork design={q.design} />
-            <div>
+            <div className="summary-artwork">
+              <Artwork design={q.design} />
+            </div>
+            <div className="summary-product-copy">
               <strong>{q.design.title}</strong>
               <span>
                 {q.design.size} ·{" "}
@@ -264,48 +346,82 @@ export default function Checkout({ quoteId }: { quoteId: string }) {
                 {catalog.find((p) => p.id === q.design.template)?.category} ·
                 Physical print
               </span>
-              <Link href={"/design/" + q.design.template}>Edit design</Link>
+              <Link href={editHref}>Edit design</Link>
             </div>
           </div>
-          <dl className="price-breakdown">
-            <div>
-              <dt>Artwork</dt>
-              <dd>{money(q.price.product)}</dd>
+          <div className="checkout-summary-total">
+            <span>Test order total</span>
+            <strong>{money(q.price.total)}</strong>
+          </div>
+          <details
+            className="checkout-summary-details"
+            open={summaryOpen}
+            onToggle={(e) => setSummaryOpen(e.currentTarget.open)}
+          >
+            <summary>
+              Personalization & price breakdown <Icon name="down" size={16} />
+            </summary>
+            <dl className="checkout-personalization">
+              {[
+                ["Names", q.design.memory?.names],
+                ["Message", q.design.subtitle],
+                ["Date", q.design.date],
+                ["Location", q.design.memory?.place],
+              ]
+                .filter(([, value]) => value)
+                .map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+            </dl>
+            <dl className="price-breakdown">
+              <div>
+                <dt>Artwork</dt>
+                <dd>{money(q.price.product)}</dd>
+              </div>
+              <div>
+                <dt>Frame upgrade</dt>
+                <dd>{q.price.frame ? money(q.price.frame) : "Included"}</dd>
+              </div>
+              <div>
+                <dt>Delivery allowance</dt>
+                <dd>{money(q.price.shipping)}</dd>
+              </div>
+              <div>
+                <dt>Tax</dt>
+                <dd>Not yet configured</dd>
+              </div>
+              <div className="price-total">
+                <dt>Test order total</dt>
+                <dd>{money(q.price.total)}</dd>
+              </div>
+            </dl>
+            <details className="quote-expiry-details">
+              <summary>Quote validity</summary>
+              <p className="quote-expiry">
+                <Icon name="clock" size={15} />
+                {remaining
+                  ? `Quote valid for ${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`
+                  : remaining === null
+                    ? "Checking quote…"
+                    : "Quote expired"}
+              </p>
+            </details>
+            <div className="summary-note">
+              <Icon name="frame" size={18} />
+              <p>
+                Next, review your private proof. One wording revision is
+                included. Production requires payment confirmation and your
+                approval.
+              </p>
             </div>
-            <div>
-              <dt>Frame upgrade</dt>
-              <dd>{q.price.frame ? money(q.price.frame) : "Included"}</dd>
-            </div>
-            <div>
-              <dt>Delivery allowance</dt>
-              <dd>{money(q.price.shipping)}</dd>
-            </div>
-            <div>
-              <dt>Tax</dt>
-              <dd>Not yet configured</dd>
-            </div>
-            <div className="price-total">
-              <dt>Test order total</dt>
-              <dd>{money(q.price.total)}</dd>
-            </div>
-          </dl>
-          <p className="quote-expiry">
-            <Icon name="clock" size={15} />
-            {remaining
-              ? `Quote valid for ${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`
-              : "Quote expired"}
-          </p>
-          <div className="summary-note">
-            <Icon name="frame" size={18} />
-            <p>
-              You review the proof preview before production. One wording
-              revision is included.
+            <p className="fine-print">
+              Prices are provisional. Tax and supplier specifications must be
+              confirmed before live ordering.
             </p>
-          </div>
-          <p className="fine-print">
-            Prices are provisional. Tax and supplier specifications must be
-            confirmed before live ordering.
-          </p>
+          </details>
         </aside>
       </div>
     </section>
