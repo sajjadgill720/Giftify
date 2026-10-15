@@ -1,5 +1,6 @@
 import "./theme.css";
 import "./boutique.css";
+import "./landing-editorial.css";
 import Link from "next/link";
 import { SiteHeader } from "../components/header";
 import { Icon } from "../components/icons";

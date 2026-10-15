@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import atelierInterior from "../public/images/examples/atelier-interior.png";
+import galleryAlcove from "../public/images/examples/gallery-alcove.png";
 import { catalog } from "../../../packages/domain/src/index";
 import { ProductCard } from "./product-card";
 import { Icon } from "./icons";
@@ -11,7 +12,7 @@ import {
 } from "../../../packages/domain/src/memory";
 export default function Home() {
   return (
-    <>
+    <div className="atelier-home">
       <section className="home-hero">
         <div className="hero-copy">
           <p className="eyebrow">Personal art. Lasting meaning.</p>
@@ -68,6 +69,10 @@ export default function Home() {
           <div>
             <p className="eyebrow">Find your story</p>
             <h2>For the moments that make a life.</h2>
+            <p className="category-introduction">
+              A photograph. A place. A person. Find the story you’d like to
+              keep.
+            </p>
           </div>
           <Link href="/shop" className="text-link">
             Explore all designs <Icon name="arrow" size={16} />
@@ -78,11 +83,15 @@ export default function Home() {
             <Link
               className={"memory-category-card category-" + id}
               href={"/products/" + id}
+              aria-label={"Explore " + memoryProfiles[id].category}
               key={id}
             >
               <span className="category-number" aria-hidden="true">
                 0{i + 1}
               </span>
+              <div className="category-artwork" aria-hidden="true">
+                <ShowcaseFrame kind={id} finish={i % 2 ? "black" : "oak"} />
+              </div>
               <div className="category-copy">
                 <h3>{memoryProfiles[id].category}</h3>
                 <p>{memoryProfiles[id].hint}</p>
@@ -108,7 +117,12 @@ export default function Home() {
           {["place", "photo", "family"]
             .map((id) => catalog.find((p) => p.id === id)!)
             .map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
+              <ProductCard
+                key={p.id}
+                product={p}
+                index={i}
+                sceneImage={galleryAlcove}
+              />
             ))}
         </div>
         <p className="collection-imagery-note">
@@ -118,6 +132,13 @@ export default function Home() {
       </section>
       <section className="story-banner">
         <div className="story-visual">
+          <Image
+            className="editorial-room-backdrop"
+            src={atelierInterior}
+            alt=""
+            fill
+            sizes="(max-width: 700px) 100vw, 50vw"
+          />
           <div className="story-frame-pair">
             <div className="story-family-frame">
               <ShowcaseFrame kind="family" finish="black" />
@@ -151,6 +172,28 @@ export default function Home() {
         <div className="center-heading">
           <p className="eyebrow">The personal touches</p>
           <h2>From your story to your wall.</h2>
+        </div>
+        <div
+          className="process-composition"
+          aria-label="Illustrative transformation from a photograph to a personalized frame"
+        >
+          <figure className="process-photograph">
+            <Image
+              src="/images/examples/couple.png"
+              alt="Example photograph of a couple at sunset"
+              width={1024}
+              height={1536}
+              sizes="(max-width: 600px) 35vw, 210px"
+            />
+            <figcaption>Your moment</figcaption>
+          </figure>
+          <span className="process-arrow" aria-hidden="true">
+            <Icon name="arrow" size={32} />
+          </span>
+          <figure className="process-artwork">
+            <ShowcaseFrame kind="photo" />
+            <figcaption>Your keepsake</figcaption>
+          </figure>
         </div>
         <div className="how-grid">
           {[
@@ -202,6 +245,13 @@ export default function Home() {
           className="finish-study"
           aria-label="Illustrative comparison of supported frame finishes"
         >
+          <Image
+            className="editorial-room-backdrop"
+            src={galleryAlcove}
+            alt=""
+            fill
+            sizes="(max-width: 800px) 90vw, 45vw"
+          />
           <figure>
             <ShowcaseFrame kind="family" finish="oak" />
             <figcaption>
@@ -282,13 +332,18 @@ export default function Home() {
         </div>
       </section>
       <section className="closing-note">
-        <Icon name="spark" size={35} />
-        <h2>For someone who means something.</h2>
-        <p>Start with a moment. Make something they’ll keep.</p>
-        <Link href="/shop" className="button light">
-          Create a personal gift <Icon name="arrow" />
-        </Link>
+        <div className="closing-artwork" aria-hidden="true">
+          <ShowcaseFrame kind="words" />
+        </div>
+        <div className="closing-copy">
+          <p className="eyebrow">A little more personal</p>
+          <h2>For someone who means something.</h2>
+          <p>Start with a moment. Make something they’ll keep.</p>
+          <Link href="/shop" className="button light">
+            Create a personal gift <Icon name="arrow" />
+          </Link>
+        </div>
       </section>
-    </>
+    </div>
   );
 }

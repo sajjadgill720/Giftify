@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image, { type StaticImageData } from "next/image";
 import {
   catalog,
   sampleDesign,
@@ -11,20 +12,33 @@ import { money } from "../lib/client";
 export function ProductCard({
   product,
   index = 0,
+  sceneImage,
 }: {
   product: (typeof catalog)[number];
   index?: number;
+  sceneImage?: StaticImageData;
 }) {
   const example = showcaseFor(product.id);
   return (
     <Link href={"/products/" + product.id} className="product-card">
       <div className={"product-scene scene-" + (index % 6)}>
+        {sceneImage && (
+          <Image
+            className="collection-interior"
+            src={sceneImage}
+            alt=""
+            fill
+            sizes="(max-width: 600px) 90vw, 32vw"
+          />
+        )}
         {example ? (
           <ShowcaseFrame kind={example} />
         ) : (
           <Artwork design={sampleDesign(product.id)} />
         )}
-        <span className="product-tag">Illustrative example</span>
+        <span className="product-tag">
+          {sceneImage ? "Illustrative interior" : "Illustrative example"}
+        </span>
         <span className="product-open">
           <Icon name="arrow" />
         </span>
