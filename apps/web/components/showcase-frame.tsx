@@ -3,73 +3,73 @@ import specialPlace from "../public/images/examples/special-place-paris.png";
 
 const examples = {
   chapter: [
-    "chapter",
-    "Maya & Arjun's first home",
-    "Our keys. Our next chapter.",
+    "fine-art-building",
+    "A doorway to somewhere",
+    "Stone, light & quiet streets",
     "12 · 09 · 2026",
   ],
   laurel: [
-    "laurel",
-    "You did it, Ayesha",
-    "A dream, a thousand late nights",
-    "CLASS OF 2026",
+    "fine-art-tree",
+    "Rooted in stillness",
+    "An olive tree study",
+    "TUSCANY · 2026",
   ],
   horizon: [
-    "travel",
-    "Our summer in Italy",
-    "Ayesha & Hamza · Our next adventure",
+    "fine-art-landscape",
+    "Beyond the horizon",
+    "A place to breathe",
     "SUMMER · 2026",
   ],
-  arch: ["photo", "Our beginning", "Ayesha & Hamza", "14 · 02 · 2026"],
+  arch: ["fine-art-building", "Quiet architecture", "Light upon limestone", "ITALY · 2026"],
   orbit: [
-    "photo",
-    "My whole world",
-    "Ayesha, always my favorite person",
+    "fine-art-stilllife",
+    "The art of simple things",
+    "Ceramic, linen & brass",
     "14 · 02 · 2026",
   ],
   bloom: [
-    "family",
-    "The Khan family",
-    "The little moments we grew together",
-    "OUR FAMILY · 2026",
+    "fine-art-tree",
+    "Under the olive tree",
+    "A little closer to nature",
+    "TUSCANY · 2026",
   ],
   coordinates: [
     "place",
     "Paris, France",
-    "Where Ayesha & Hamza first met",
+    "Streets worth remembering",
     "14 · 02 · 2026",
   ],
   photo: [
-    "photo",
-    "Our favorite moment",
-    "Ayesha & Hamza · Just us, just here",
+    "fine-art-landscape",
+    "A moment of stillness",
+    "Mountains, water & morning light",
     "14 · 02 · 2026",
   ],
-  couple: ["photo", "Our kind of forever", "Ayesha & Hamza", "14 · 02 · 2026"],
+  couple: ["fine-art-tree", "Rooted in stillness", "The olive groves of Tuscany", "SPRING · 2026"],
   family: [
-    "family",
-    "The Khan family",
-    "A year of laughter & love",
-    "OUR LITTLE WORLD · 2026",
+    "fine-art-building",
+    "Stories in stone",
+    "The beauty of quiet places",
+    "ITALY · 2026",
   ],
   birthday: [
-    "birthday",
-    "Sara turns thirty",
-    "A little older, a lot more loved",
+    "fine-art-stilllife",
+    "Everyday sculpture",
+    "Collected with care",
     "12 · 08 · 2026",
   ],
-  pet: ["pet", "Cleo", "Forever by our side", "OUR FIRST HELLO · 2019"],
+  pet: ["fine-art-stilllife", "Simple, beautiful things", "A study in warm neutrals", "STILL LIFE · 2026"],
   travel: [
-    "travel",
-    "Amalfi, with you",
-    "Ayesha & Hamza · The trip of a lifetime",
-    "ITALY · SUMMER 2026",
+    "fine-art-landscape",
+    "Where the mountains meet",
+    "A quiet alpine morning",
+    "THE ALPS · 2026",
   ],
   words: [
     "words",
-    "Our ordinary days",
-    "Ayesha & Hamza · They became everything",
-    "OUR STORY, SINCE 2020",
+    "The quiet things",
+    "A little space for stillness",
+    "NOTES FROM NATURE",
   ],
   place: ["place", "Paris, France", "Where it all began", "14 · 02 · 2026"],
 } as const;
@@ -127,19 +127,13 @@ export function ShowcaseFrame({
             </div>
           ) : (
             <div
-              className={`showcase-photo ${kind === "family" ? "showcase-collage" : ""} ${image === "place" ? "showcase-map-window" : ""}`}
+              className={`showcase-photo ${image === "place" ? "showcase-map-window" : ""}`}
             >
               <Image
                 src={
-                  photoSrc ?? (kind === "family" || kind === "bloom"
-                    ? "/images/examples/family-collage-v2.png"
-                    : kind === "pet"
-                      ? "/images/examples/pet-cat-watercolor.png"
-                      : image === "photo"
-                        ? "/images/examples/couple.png"
-                        : image === "place"
-                          ? specialPlace
-                          : `/images/examples/${image}.png`)
+                  photoSrc ?? (image === "place"
+                    ? specialPlace
+                    : `/images/examples/${image}.png`)
                 }
                 alt=""
                 width={1024}

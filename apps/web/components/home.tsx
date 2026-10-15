@@ -26,8 +26,8 @@ export default function Home() {
             <em>A piece for your home.</em>
           </h1>
           <p className="hero-description">
-            A favorite photograph. The place you first met. A few words only you
-            understand. Make room for the things that matter.
+            Sculptural trees. Open landscapes. Quiet architecture. Beautiful
+            everyday objects. Make room for the details that move you.
           </p>
           <Link href="/design/photo" className="button">
             Create your keepsake <Icon name="arrow" />
@@ -72,8 +72,8 @@ export default function Home() {
             <p className="eyebrow">Find your story</p>
             <h2>For the moments that make a life.</h2>
             <p className="category-introduction">
-              A photograph. A place. A person. Find the story you’d like to
-              keep.
+              Nature, architecture, and the art of everyday things. Find a view
+              you’d like to keep.
             </p>
           </div>
           <Link href="/shop" className="text-link">
@@ -162,8 +162,8 @@ export default function Home() {
             <em>say a little more.</em>
           </h2>
           <p>
-            A first home. A hard-earned milestone. Your favorite person. Create
-            a thoughtful gift that says what ordinary words can’t.
+            A favorite landscape. A beautiful building. A quiet corner of nature.
+            Create a thoughtful piece that brings a little calm into a home.
           </p>
           <Link href="/shop" className="text-link">
             Find something meaningful <Icon name="arrow" />
@@ -181,8 +181,8 @@ export default function Home() {
         >
           <figure className="process-photograph">
             <Image
-              src="/images/examples/mother-child-memory.png"
-              alt="Illustrative memory of a mother holding her toddler in a garden"
+              src="/images/examples/fine-art-building.png"
+              alt="Illustrative architectural photograph of a limestone archway"
               width={1024}
               height={1536}
               sizes="(max-width: 600px) 35vw, 210px"
@@ -195,10 +195,10 @@ export default function Home() {
           <figure className="process-artwork">
             <ShowcaseFrame
               kind="photo"
-              photoSrc="/images/examples/mother-child-memory.png"
+              photoSrc="/images/examples/fine-art-building.png"
               wording={{
-                title: "The smallest moments",
-                message: "Amina & Noor",
+                title: "Stories in stone",
+                message: "Light upon limestone",
                 date: "18 · 04 · 2026",
               }}
             />
