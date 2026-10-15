@@ -386,7 +386,7 @@ export default function Studio({
           <h1>
             {
               [
-                "Let’s tell your story.",
+                "Compose something lasting.",
                 "Give it a home.",
                 "A little piece of you.",
               ][step]
@@ -395,7 +395,9 @@ export default function Studio({
           <p className="control-intro">
             {
               [
-                "A few thoughtful words can hold a whole memory. Make them yours.",
+                design.template === "quran" || design.template === "hadith"
+                  ? "Your chosen passage, its source, and a composition made with care."
+                  : "A landscape, a place, or an object of quiet beauty. Add the words that make it yours.",
                 "Choose the scale and finish that feel right for your space.",
                 "Check the details below. You’ll approve the exact print proof before production.",
               ][step]
@@ -447,17 +449,17 @@ export default function Studio({
               {[
                 {
                   key: "title",
-                  label: "Names or headline",
-                  placeholder: "e.g. Our next chapter",
+                  label: "Artwork title",
+                  placeholder: "e.g. Light upon limestone",
                   max: 32,
                   hint: "The words at the heart of your artwork.",
                 },
                 {
                   key: "subtitle",
                   label: "Your personal message",
-                  placeholder: "e.g. Ayesha & Hamza",
+                  placeholder: "e.g. The Tuscany collection",
                   max: 48,
-                  hint: "A name, a dedication, or something only you two know.",
+                  hint: "A collection, a dedication, or a detail worth remembering.",
                 },
                 {
                   key: "date",

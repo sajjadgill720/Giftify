@@ -26,9 +26,7 @@ export function SiteHeader() {
           <Link className={path === "/shop" ? "active" : ""} href="/shop">
             The collection
           </Link>
-          <Link href="/shop?occasion=Love%20%26%20anniversaries">
-            For your person
-          </Link>
+          <Link href="/shop?occasion=Nature%20studies">Nature studies</Link>
           <Link href="/help">How it works</Link>
           <Link href="/design/photo">Personalize</Link>
         </nav>

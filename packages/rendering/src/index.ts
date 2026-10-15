@@ -10,8 +10,13 @@ export function canonical(d: Design) {
 }
 import { layout } from "./representation";
 import { memoryMarker } from "./memory-layout";
+import { isSacredTemplate } from "../../domain/src/memory";
 export { svg } from "./representation";
 export function validatePrintText(d: Design) {
+  if (isSacredTemplate(d.template) && !d.memory?.names.trim())
+    throw new Error(
+      "Add the surah and ayah reference, or hadith collection and reference, before ordering.",
+    );
   const values = [
     d.title,
     d.subtitle,

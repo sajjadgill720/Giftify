@@ -8,7 +8,12 @@ export const memoryTemplates = [
   "travel",
   "words",
   "place",
+  "quran",
+  "hadith",
 ] as const;
+export function isSacredTemplate(template: string) {
+  return template === "quran" || template === "hadith";
+}
 export const photoSchema = z
   .object({
     assetId: z.uuid(),
@@ -98,64 +103,84 @@ export function selectMemoryMode(memory: Memory, mode: Memory["mode"]): Memory {
   };
 }
 export const memoryProfiles = {
-  photo: {
-    name: "Your favorite moment",
-    category: "Photo memories",
-    occasion: "Everyday moments",
+  quran: {
+    name: "Words for reflection",
+    category: "Quranic ayat",
+    occasion: "Quran & Hadith",
     description:
-      "A photograph, a few personal words, and a beautiful place to keep them. Make an everyday memory feel extraordinary.",
-    title: "Our favorite moment",
-    hint: "A favorite photograph",
+      "Give a cherished ayah a considered place in your home. A restrained text composition with your chosen passage and its surah and verse reference.",
+    title: "Quranic reflection",
+    hint: "Your chosen ayah & verse reference",
+    accent: "#54705d",
+  },
+  hadith: {
+    name: "A reminder to live by",
+    category: "Ahadees",
+    occasion: "Quran & Hadith",
+    description:
+      "A meaningful reminder, presented with care. Compose a hadith with its collection and reference in an elegant, text-only design.",
+    title: "A daily reminder",
+    hint: "Your chosen hadith & source",
+    accent: "#9b7c4f",
+  },
+  photo: {
+    name: "A view worth keeping",
+    category: "Landscapes",
+    occasion: "Landscapes & light",
+    description:
+      "Give a remarkable view a lasting place in your home. Your landscape photograph, considered typography, and a finish chosen for your space.",
+    title: "A moment of stillness",
+    hint: "Open horizons & quiet light",
     accent: "#b38a65",
   },
   couple: {
-    name: "From here, together",
-    category: "Couples",
-    occasion: "Love & anniversaries",
+    name: "Rooted in stillness",
+    category: "Trees & botanicals",
+    occasion: "Nature studies",
     description:
-      "For your first hello, your wedding day, and every little moment together. A romantic photo keepsake with your names and anniversary.",
-    title: "Our story, together",
-    hint: "Your names & anniversary",
+      "Sculptural branches, enduring roots, and the poetry of natural form. Create a botanical study with a title and palette of your own.",
+    title: "Rooted in stillness",
+    hint: "Trees, foliage & natural form",
     accent: "#b77e77",
   },
   family: {
-    name: "All our little moments",
-    category: "Family collages",
-    occasion: "Family & home",
+    name: "A collection of places",
+    category: "Place collages",
+    occasion: "Architecture & places",
     description:
-      "Bring up to four photographs together in a thoughtful family collage. Different moments, one place to belong.",
-    title: "Our favorite people",
-    hint: "Up to four family photographs",
+      "Bring up to four views into one considered composition. Pair architectural details, landscapes, or treasured objects in a personal visual collection.",
+    title: "A collection of places",
+    hint: "Up to four places or details",
     accent: "#6b7c64",
   },
   birthday: {
-    name: "Another beautiful year",
-    category: "Birthdays",
-    occasion: "Birthdays",
+    name: "Everyday sculpture",
+    category: "Object studies",
+    occasion: "Still life & objects",
     description:
-      "Celebrate their name, their age, and the people who make every year special. A personal birthday print to treasure.",
-    title: "A year to remember",
-    hint: "A name, age & birthday wish",
+      "Discover the presence in simple things. Turn a photograph of ceramics, collected objects, or a composed still life into a quietly distinctive piece.",
+    title: "Everyday sculpture",
+    hint: "Collected objects & thoughtful details",
     accent: "#c49f63",
   },
   pet: {
-    name: "Always in our hearts",
-    category: "Pets",
-    occasion: "Pets & companions",
+    name: "The art of simple things",
+    category: "Still life",
+    occasion: "Still life & objects",
     description:
-      "A soft portrait of your favorite companion, with their name and a message only a pet person would understand.",
-    title: "Our best friend",
-    hint: "Your pet’s name & portrait",
+      "Texture, proportion, and light, beautifully composed. Frame the everyday objects that bring character to a room.",
+    title: "The art of simple things",
+    hint: "Ceramics, textures & quiet compositions",
     accent: "#718976",
   },
   travel: {
-    name: "We were here",
-    category: "Travel memories",
-    occasion: "Travel & adventures",
+    name: "Beyond the familiar",
+    category: "Architecture",
+    occasion: "Architecture & places",
     description:
-      "Keep a favorite journey close. Combine your travel photograph with a place, a date, and the story you brought home.",
-    title: "An adventure worth keeping",
-    hint: "Your photograph & destination",
+      "Preserve the character of a building, a street, or a distant destination. Your photograph and chosen words, composed with restraint.",
+    title: "Stories in stone",
+    hint: "Buildings, streets & destinations",
     accent: "#758c99",
   },
   words: {
@@ -182,7 +207,11 @@ export const memoryProfiles = {
 export function defaultMemory(template: (typeof memoryTemplates)[number]) {
   return memorySchema.parse({
     mode:
-      template === "words" ? "words" : template === "place" ? "place" : "photo",
+      template === "words" || isSacredTemplate(template)
+        ? "words"
+        : template === "place"
+          ? "place"
+          : "photo",
     photos: [],
     narrative: "",
     names: "",

@@ -36,8 +36,8 @@ export default function Collection({
           <em>Meaningful things.</em>
         </h1>
         <p>
-          Original artwork for the chapters, people, and milestones that make
-          your story yours.
+          Landscapes, natural forms, architecture, and objects of quiet beauty.
+          Discover a composition that feels at home in your space.
         </p>
       </div>
       <div className="collection-toolbar">

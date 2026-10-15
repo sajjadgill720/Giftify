@@ -617,3 +617,91 @@
     transform: none;
   }
 }
+.atelier-home .sacred-collection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 64px;
+  background: #e9e6dc;
+  border-block: 1px solid #cfc6b5;
+}
+.sacred-collection h2 {
+  font: clamp(36px, 4vw, 56px)/1.08 var(--serif);
+  color: #33483b;
+}
+.sacred-collection p:not(.eyebrow) {
+  max-width: 450px;
+  line-height: 1.8;
+  color: #5c6154;
+}
+.sacred-frame-pair {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+}
+.sacred-frame-pair > a {
+  width: 44%;
+  color: #4e483b;
+}
+.sacred-frame-pair > a > span {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  font-size: 13px;
+}
+.sacred-frame-pair .showcase-frame {
+  width: 100%;
+  transition:
+    transform 0.25s,
+    filter 0.25s;
+}
+.sacred-frame-pair > a:hover .showcase-frame {
+  transform: translateY(-5px);
+  filter: drop-shadow(0 12px 12px #382c2526);
+}
+.sacred-frame-pair > a:focus-visible {
+  outline: 2px solid #675339;
+  outline-offset: 8px;
+}
+.sacred-example {
+  margin: 8%;
+  min-height: 65%;
+  border: 1px solid #ab9266;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8%;
+  color: #445c48;
+}
+.sacred-example .sacred-ornament {
+  font-size: 14cqw;
+  color: #9c8051;
+}
+.sacred-example p {
+  font: 7cqw/1.5 var(--serif);
+}
+.sacred-example small {
+  font: 3cqw/1.5 var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+@media (max-width: 700px) {
+  .atelier-home .sacred-collection {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+  .sacred-frame-pair {
+    gap: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sacred-frame-pair .showcase-frame {
+    transition: none;
+  }
+  .sacred-frame-pair > a:hover .showcase-frame {
+    transform: none;
+  }
+}

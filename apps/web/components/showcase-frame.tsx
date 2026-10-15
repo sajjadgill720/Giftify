@@ -2,6 +2,13 @@ import Image from "next/image";
 import specialPlace from "../public/images/examples/special-place-paris.png";
 
 const examples = {
+  quran: [
+    "words",
+    "Quranic ayat",
+    "Your chosen ayah",
+    "SURAH & AYAH REFERENCE",
+  ],
+  hadith: ["words", "Ahadees", "Your chosen hadith", "COLLECTION & REFERENCE"],
   chapter: [
     "fine-art-building",
     "A doorway to somewhere",
@@ -20,7 +27,12 @@ const examples = {
     "A place to breathe",
     "SUMMER · 2026",
   ],
-  arch: ["fine-art-building", "Quiet architecture", "Light upon limestone", "ITALY · 2026"],
+  arch: [
+    "fine-art-building",
+    "Quiet architecture",
+    "Light upon limestone",
+    "ITALY · 2026",
+  ],
   orbit: [
     "fine-art-stilllife",
     "The art of simple things",
@@ -45,7 +57,12 @@ const examples = {
     "Mountains, water & morning light",
     "14 · 02 · 2026",
   ],
-  couple: ["fine-art-tree", "Rooted in stillness", "The olive groves of Tuscany", "SPRING · 2026"],
+  couple: [
+    "fine-art-tree",
+    "Rooted in stillness",
+    "The olive groves of Tuscany",
+    "SPRING · 2026",
+  ],
   family: [
     "fine-art-building",
     "Stories in stone",
@@ -58,7 +75,12 @@ const examples = {
     "Collected with care",
     "12 · 08 · 2026",
   ],
-  pet: ["fine-art-stilllife", "Simple, beautiful things", "A study in warm neutrals", "STILL LIFE · 2026"],
+  pet: [
+    "fine-art-stilllife",
+    "Simple, beautiful things",
+    "A study in warm neutrals",
+    "STILL LIFE · 2026",
+  ],
   travel: [
     "fine-art-landscape",
     "Where the mountains meet",
@@ -111,7 +133,19 @@ export function ShowcaseFrame({
         aria-label={`Example framed artwork: ${title}. ${message}`}
       >
         <div className="showcase-paper">
-          {image === "words" ? (
+          {kind === "quran" || kind === "hadith" ? (
+            <div className="sacred-example">
+              <span className="sacred-ornament" aria-hidden="true">
+                ✳
+              </span>
+              <p>
+                {kind === "quran"
+                  ? "A place for reflection"
+                  : "A daily reminder"}
+              </p>
+              <small>Text layout preview</small>
+            </div>
+          ) : image === "words" ? (
             <div className="showcase-quote">
               <span>“</span>
               <p>
@@ -131,7 +165,8 @@ export function ShowcaseFrame({
             >
               <Image
                 src={
-                  photoSrc ?? (image === "place"
+                  photoSrc ??
+                  (image === "place"
                     ? specialPlace
                     : `/images/examples/${image}.png`)
                 }

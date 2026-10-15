@@ -7,6 +7,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { PGlite } from "@electric-sql/pglite";
 import { NextRequest } from "next/server";
+import { ARTWORK_POLICY_VERSION } from "../packages/domain/src/artwork-policy";
 import { DB, migrate, scoped } from "../packages/domain/src/db";
 import {
   newSession,
@@ -95,6 +96,7 @@ async function request(
         Origin: base,
         Cookie: "purchaser=" + token,
         "Content-Type": bytes ? "image/svg+xml" : "application/json",
+        ...(bytes ? { "x-artwork-policy": ARTWORK_POLICY_VERSION } : {}),
         ...(ops ? { Authorization: "Bearer " + process.env.OPS_TOKEN } : {}),
       },
       body: bytes
@@ -156,6 +158,25 @@ test("uploads validate decoded bytes instead of browser MIME, normalize EXIF ori
   assert.ok(metadata.width! <= 640 && metadata.height! <= 640);
   const uploaded = await request("assets", a.token, undefined, false, source);
   assert.equal(uploaded.status, 201); // Deliberately wrong MIME still uses decoding.
+  const missingDeclaration = await handle(
+    new NextRequest(base + "/api/assets", {
+      method: "POST",
+      headers: { Origin: base, Cookie: "purchaser=" + a.token },
+      body: new Uint8Array(source),
+    }),
+    { params: Promise.resolve({ path: ["assets"] }) },
+  );
+  assert.equal(missingDeclaration.status, 400);
+  assert.match((await missingDeclaration.json()).error, /no people or animals/);
+  const saved = (
+    await db.query("SELECT source_metadata FROM art.assets WHERE id=$1", [
+      (await uploaded.json()).id,
+    ])
+  ).rows[0];
+  assert.equal(
+    saved.source_metadata.contentDeclaration.version,
+    ARTWORK_POLICY_VERSION,
+  );
 });
 test("originals and print images are not customer endpoints, asset IDs are isolated and only safe metadata is returned", async () => {
   assert.equal(
@@ -237,10 +258,12 @@ test("every memory category renders a distinct layout, reuses the uploaded photo
   const hashes = new Set<string>();
   for (const template of memoryTemplates.filter((t) => t !== "place")) {
     const d = design(template);
-    if (template === "words") {
+    const textOnly = ["words", "quran", "hadith"].includes(template);
+    if (textOnly) {
       d.memory!.mode = "words";
       d.memory!.narrative = "The morning we found a place that felt like home.";
       d.memory!.photos = [];
+      if (template !== "words") d.memory!.names = "Test fixture reference";
     }
     if (template === "family")
       d.memory!.photos.push({ ...d.memory!.photos[0], assetId: second.id });
@@ -249,12 +272,12 @@ test("every memory category renders a distinct layout, reuses the uploaded photo
       bytes = await pdf(d, images);
     hashes.add(hash(bytes));
     assert.ok(bytes.subarray(0, 4).toString() === "%PDF");
-    if (template !== "words")
+    if (!textOnly)
       assert.ok(bytes.toString("latin1").includes("/Subtype /Image"));
     const jpg = await preview(d, await artworkPictures(db, a.id, d, "guest"));
     assert.equal((await sharp(jpg).metadata()).format, "jpeg");
   }
-  assert.equal(hashes.size, 7);
+  assert.equal(hashes.size, memoryTemplates.length - 1);
 });
 test("a photo purchase locks assets, saves a real raster proof, and allows audited originals only to the order operator", async () => {
   const d = design(),

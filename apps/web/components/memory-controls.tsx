@@ -8,6 +8,7 @@ import {
   cropGeometry,
   Photo,
   selectMemoryMode,
+  isSacredTemplate,
 } from "../../../packages/domain/src/memory";
 import {
   memoryLayout,
@@ -16,6 +17,10 @@ import {
 import { api, ApiError } from "../lib/client";
 import { Icon } from "./icons";
 import { PrintQualityExplainer } from "./print-quality-explainer";
+import {
+  ARTWORK_POLICY_COPY,
+  ARTWORK_POLICY_VERSION,
+} from "../../../packages/domain/src/artwork-policy";
 type Asset = { id: string; width: number; height: number };
 export function MemoryControls({
   design,
@@ -26,6 +31,7 @@ export function MemoryControls({
   change: (next: Design) => void;
   onBusy: (busy: boolean) => void;
 }) {
+  const sacred = isSacredTemplate(design.template);
   const m = design.memory!,
     latest = useRef(design),
     [selected, setSelected] = useState(0),
@@ -34,6 +40,7 @@ export function MemoryControls({
     [busy, setBusy] = useState(false),
     [replace, setReplace] = useState(false),
     [adding, setAdding] = useState(false),
+    [contentConfirmed, setContentConfirmed] = useState(false),
     [query, setQuery] = useState(""),
     [imageQuery, setImageQuery] = useState(""),
     [results, setResults] = useState<any[]>([]),
@@ -72,6 +79,12 @@ export function MemoryControls({
     if (!files?.length) return;
     if (busy) return;
     setError("");
+    if (!contentConfirmed) {
+      setError(
+        "Please confirm the image guidelines before choosing or dropping a file.",
+      );
+      return;
+    }
     pending(true);
     try {
       const available = replace ? 1 : 4 - latest.current.memory!.photos.length;
@@ -86,7 +99,10 @@ export function MemoryControls({
           throw new Error("Choose a photograph smaller than 8 MB.");
         const response = await fetch("/api/assets", {
           method: "POST",
-          headers: { "Content-Type": "application/octet-stream" },
+          headers: {
+            "Content-Type": "application/octet-stream",
+            "x-artwork-policy": ARTWORK_POLICY_VERSION,
+          },
           body: file,
         });
         const a = await response.json();
@@ -181,38 +197,45 @@ export function MemoryControls({
   });
   return (
     <div className="memory-controls">
-      <fieldset className="memory-source-choices">
-        <legend>Start with your memory</legend>
-        <div className="memory-source-grid" aria-label="Memory source">
-          {(
-            [
-              ["photo", "Favorite photo", "Add your photograph", "frame"],
+      {!sacred && (
+        <fieldset className="memory-source-choices">
+          <legend>Start with your memory</legend>
+          <div className="memory-source-grid" aria-label="Memory source">
+            {(
               [
-                "place",
-                "Special place",
-                "Find a meaningful location",
-                "search",
-              ],
-              ["words", "In your words", "Tell your story", "edit"],
-            ] as const
-          ).map(([mode, label, hint, icon]) => (
-            <button
-              type="button"
-              key={mode}
-              className={m.mode === mode ? "selected" : ""}
-              aria-label={label}
-              aria-pressed={m.mode === mode}
-              disabled={busy}
-              onClick={() => update(selectMemoryMode(m, mode))}
-            >
-              <Icon name={icon} size={20} />
-              <strong>{label}</strong>
-              <span>{hint}</span>
-              <Icon name={m.mode === mode ? "check" : "arrow"} size={15} />
-            </button>
-          ))}
-        </div>
-      </fieldset>
+                [
+                  "photo",
+                  "Your photograph",
+                  "Nature, places & objects",
+                  "frame",
+                ],
+                [
+                  "place",
+                  "Special place",
+                  "Find a meaningful location",
+                  "search",
+                ],
+                ["words", "In your words", "Tell your story", "edit"],
+              ] as const
+            ).map(([mode, label, hint, icon]) => (
+              <button
+                type="button"
+                key={mode}
+                className={m.mode === mode ? "selected" : ""}
+                aria-label={label}
+                aria-pressed={m.mode === mode}
+                disabled={busy}
+                onClick={() => update(selectMemoryMode(m, mode))}
+              >
+                <Icon name={icon} size={20} />
+                <strong>{label}</strong>
+                <span>{hint}</span>
+                <Icon name={m.mode === mode ? "check" : "arrow"} size={15} />
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      )}
       <label className="field">
         Choose your kind of memory
         <select
@@ -237,7 +260,7 @@ export function MemoryControls({
                 layout: next.layout,
                 background: next.background,
                 mode:
-                  template === "words"
+                  template === "words" || isSacredTemplate(template)
                     ? "words"
                     : template === "place"
                       ? "place"
@@ -258,16 +281,40 @@ export function MemoryControls({
       <p className="field-hint">
         Switch designs freely. Your photos and personal details stay with you.
       </p>
+      {sacred && (
+        <div className="artwork-upload-policy">
+          <strong>Words chosen with care.</strong>
+          <p>
+            Copy your passage from a trusted source and include its exact
+            reference. Check every word and diacritic before approving your
+            proof.
+          </p>
+          <p>
+            Arabic and Urdu are available as draft previews. Print checkout for
+            these scripts remains unavailable until fonts and shaping are
+            validated.
+          </p>
+        </div>
+      )}
       {m.mode === "words" ? (
         <label className="field">
-          Describe your memory
+          {sacred
+            ? design.template === "quran"
+              ? "Your chosen ayah"
+              : "Your chosen hadith"
+            : "Describe your memory"}
           <textarea
             value={m.narrative}
             maxLength={220}
             minLength={8}
             rows={5}
+            dir="auto"
             onChange={(e) => update({ narrative: e.target.value })}
-            placeholder="Tell the story of a moment you’ll always remember…"
+            placeholder={
+              sacred
+                ? "Paste your verified passage here…"
+                : "Tell the story of a moment you’ll always remember…"
+            }
           />
           <span className="field-hint">
             {m.narrative.length}/220 · No photograph needed.
@@ -372,46 +419,63 @@ export function MemoryControls({
           {m.mode === "photo" && (
             <div key="photo-controls" className="photo-source-controls">
               {(!m.photos.length || replace || adding) && (
-                <label
-                  className="photo-upload"
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    if (!busy) e.currentTarget.classList.add("drag-active");
-                  }}
-                  onDragLeave={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget as Node))
-                      e.currentTarget.classList.remove("drag-active");
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.remove("drag-active");
-                    void upload(e.dataTransfer.files);
-                  }}
-                >
-                  <Icon name="frame" size={25} />
-                  <strong>
-                    {busy
-                      ? "Keeping your photo safe…"
-                      : replace
-                        ? "Replace selected photograph"
-                        : "Add your favorite photographs"}
-                  </strong>
-                  <span>
-                    Drop photos here or choose files · JPEG or PNG · Up to 8 MB
-                    each
-                  </span>
-                  <input
-                    aria-label="Upload photographs"
-                    type="file"
-                    accept="image/jpeg,image/png"
-                    multiple={!replace}
-                    disabled={busy}
-                    onChange={(e) => {
-                      void upload(e.target.files);
-                      e.target.value = "";
+                <>
+                  <div className="artwork-upload-policy">
+                    <strong>
+                      A considered collection. A clear point of view.
+                    </strong>
+                    <p id="artwork-policy-copy">{ARTWORK_POLICY_COPY}</p>
+                    <label className="artwork-policy-confirm">
+                      <input
+                        type="checkbox"
+                        checked={contentConfirmed}
+                        onChange={(e) => setContentConfirmed(e.target.checked)}
+                      />
+                      My images contain no people or animals.
+                    </label>
+                  </div>
+                  <label
+                    className="photo-upload"
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (!busy) e.currentTarget.classList.add("drag-active");
                     }}
-                  />
-                </label>
+                    onDragLeave={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node))
+                        e.currentTarget.classList.remove("drag-active");
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove("drag-active");
+                      void upload(e.dataTransfer.files);
+                    }}
+                  >
+                    <Icon name="frame" size={25} />
+                    <strong>
+                      {busy
+                        ? "Keeping your photo safe…"
+                        : replace
+                          ? "Replace selected photograph"
+                          : "Add your landscape, place, or object"}
+                    </strong>
+                    <span>
+                      Drop photos here or choose files · JPEG or PNG · Up to 8
+                      MB each
+                    </span>
+                    <input
+                      aria-label="Upload photographs"
+                      type="file"
+                      accept="image/jpeg,image/png"
+                      multiple={!replace}
+                      disabled={busy || !contentConfirmed}
+                      aria-describedby="artwork-policy-copy"
+                      onChange={(e) => {
+                        void upload(e.target.files);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                </>
               )}
               {(replace || adding) && m.photos.length > 0 && (
                 <button
@@ -615,30 +679,30 @@ export function MemoryControls({
         </>
       )}
       <label className="field">
-        {design.template === "pet"
-          ? "Your pet’s name"
-          : design.template === "family"
-            ? "Family name"
-            : design.template === "birthday"
-              ? "Birthday person’s name"
-              : "Names"}{" "}
-        <span className="optional-label">(optional)</span>
+        {sacred
+          ? design.template === "quran"
+            ? "Surah and ayah reference"
+            : "Hadith collection and reference"
+          : "Collection or dedication"}{" "}
+        <span className="optional-label">
+          {sacred ? "(required to order)" : "(optional)"}
+        </span>
         <input
           value={m.names}
           maxLength={48}
           placeholder={
-            design.template === "pet"
-              ? "Optional · e.g. Cleo"
-              : design.template === "family"
-                ? "Optional · e.g. The Khan family"
-                : "Optional · e.g. Ayesha & Hamza"
+            sacred
+              ? design.template === "quran"
+                ? "e.g. Surah Ash-Sharh 94:6"
+                : "e.g. Sahih al-Bukhari 1"
+              : "Optional · e.g. The Tuscany collection"
           }
           onChange={(e) => update({ names: e.target.value })}
         />
       </label>
       {m.mode === "photo" && design.template === "birthday" && (
         <label className="field">
-          Age you’re celebrating (optional)
+          Object age (optional)
           <input
             type="number"
             placeholder="Optional · e.g. 30"
@@ -659,14 +723,14 @@ export function MemoryControls({
         </label>
       )}
       <label className="field">
-        {design.template === "travel"
+        {sacred ? "Translation source or edition" : design.template === "travel"
           ? "Destination"
           : "Location or a meaningful place"}{" "}
         <span className="optional-label">(optional)</span>
         <input
           value={m.place}
           maxLength={64}
-          placeholder="Optional · e.g. Paris, France"
+          placeholder={sacred ? "Optional · Name of translator or edition" : "Optional · e.g. Paris, France"}
           onChange={(e) => update({ place: e.target.value })}
         />
       </label>

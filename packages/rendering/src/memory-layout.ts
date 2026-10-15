@@ -240,7 +240,12 @@ export function memoryLayout(d: Design): ArtworkLayout {
       font,
       editKey: "title",
     });
-    const story = wrap(m.narrative || "Your story belongs here.");
+    const story = wrap(
+      m.narrative ||
+        (d.template === "quran" || d.template === "hadith"
+          ? "Your chosen passage belongs here."
+          : "Your story belongs here."),
+    );
     story.forEach((text, i) =>
       lines.push({ text, y: h * 0.32 + i * h * 0.04, size: w * 0.021, font }),
     );

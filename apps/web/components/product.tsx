@@ -101,6 +101,7 @@ export default function Product({
               <span>Personalized & framed</span>
             </div>
             <p className="product-description">{product.description}</p>
+            {(product.id === "quran" || product.id === "hadith") && <p className="artwork-upload-policy">Arabic and Urdu are draft previews only. Print checkout for these scripts awaits validated fonts and shaping. Supply your passage and source reference; text is not automatically authenticated.</p>}
             <fieldset>
               <legend>
                 Choose your size <span>Print dimensions</span>

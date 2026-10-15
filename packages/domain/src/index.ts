@@ -5,6 +5,7 @@ import {
   memorySchema,
   memoryProfiles,
   defaultMemory,
+  isSacredTemplate,
 } from "./memory";
 export const designSchema = z
   .object({
@@ -41,6 +42,11 @@ export const designSchema = z
   .strict()
   .superRefine((d, ctx) => {
     if ((memoryTemplates as readonly string[]).includes(d.template)) {
+      if (isSacredTemplate(d.template) && d.memory?.mode !== "words")
+        ctx.addIssue({
+          code: "custom",
+          message: "Quran and hadith designs use text-only layouts.",
+        });
       if (
         d.version !== 4 ||
         !d.memory ||
@@ -112,21 +118,21 @@ const originalCatalog = templates.map((id, i) => ({
   category: id === "coordinates" ? "Coordinates & Stories" : "Milestone Art",
   version: id === "coordinates" ? 3 : 2,
   occasion: [
-    "New beginnings",
-    "Achievements",
-    "New beginnings",
-    "Love & anniversaries",
-    "Love & anniversaries",
-    "Family & home",
-    "Love & anniversaries",
+    "Architecture & places",
+    "Nature studies",
+    "Landscapes & light",
+    "Architecture & places",
+    "Still life & objects",
+    "Nature studies",
+    "Architecture & places",
   ][i],
   description: [
-    "A quiet celebration of everything ahead. An original sun-and-arch composition for your next chapter.",
-    "For the hard work, the late nights, and the moment it all came together. A modern laurel of recognition.",
+    "Architectural lines and considered proportions. An original sun-and-arch composition for a distinctive corner of your home.",
+    "A study in natural form. Refined botanical geometry with the words and palette you choose.",
     "Carry a little possibility with you. Layered landscapes for new adventures and meaningful milestones.",
-    "A place for the day your story began. Two architectural arches, one shared beginning.",
-    "Some people are your entire universe. An orbital composition for the connection that keeps you grounded.",
-    "For the people who help you grow. An original botanical composition to celebrate family and belonging.",
+    "Two architectural arches, composed with balance and restraint. A quiet statement for a considered interior.",
+    "An orbital study in balance and proportion. Distinctive geometry, composed around your chosen words.",
+    "Bring the rhythm of botanical form indoors. An original composition with a naturally gentle presence.",
     "Some places become part of you. Preserve their exact coordinates alongside your names, a meaningful date, and a few words of your own.",
   ][i],
   accent: [
@@ -150,8 +156,8 @@ export function sampleDesign(template: Design["template"] = "chapter"): Design {
       template: id,
       version: 4,
       title: memoryProfiles[id].title,
-      subtitle: "A moment worth keeping",
-      date: "14.02.2026",
+      subtitle: isSacredTemplate(id) ? "" : "A moment worth keeping",
+      date: isSacredTemplate(id) ? "" : "14.02.2026",
       size: "A3",
       finish: "oak",
       memory: defaultMemory(id),

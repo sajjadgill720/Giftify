@@ -17,7 +17,7 @@ export default function Home() {
     <div className="atelier-home">
       <section className="home-hero">
         <div className="hero-copy">
-          <p className="eyebrow">Personal art. Lasting meaning.</p>
+          <p className="eyebrow">A considered view. Beautifully framed.</p>
           <h1>
             A place in
             <br />
@@ -26,14 +26,15 @@ export default function Home() {
             <em>A piece for your home.</em>
           </h1>
           <p className="hero-description">
-            Sculptural trees. Open landscapes. Quiet architecture. Beautiful
-            everyday objects. Make room for the details that move you.
+            The quiet strength of a tree. The scale of an open landscape.
+            Architecture and objects with a story to tell. Bring what moves you
+            into the space you call home.
           </p>
           <Link href="/design/photo" className="button">
-            Create your keepsake <Icon name="arrow" />
+            Compose your artwork <Icon name="arrow" />
           </Link>
           <div className="hero-note">
-            Your photograph. Your words. Your story, framed.
+            Your perspective. Your words. A piece entirely your own.
           </div>
         </div>
         <div className="boutique-hero-art">
@@ -70,7 +71,7 @@ export default function Home() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">Find your story</p>
-            <h2>For the moments that make a life.</h2>
+            <h2>A collection with a point of view.</h2>
             <p className="category-introduction">
               Nature, architecture, and the art of everyday things. Find a view
               you’d like to keep.
@@ -105,11 +106,42 @@ export default function Home() {
           ))}
         </div>
       </section>
+      <section className="section sacred-collection">
+        <div>
+          <p className="eyebrow">Quranic ayat & ahadees</p>
+          <h2>A place for reflection.</h2>
+          <p>
+            Meaningful words, composed with restraint. Create a text-only piece
+            around your chosen ayah or hadith, with its source carefully
+            recorded.
+          </p>
+          <Link
+            href="/shop?occasion=Quran%20%26%20Hadith"
+            className="text-link"
+          >
+            Explore the collection <Icon name="arrow" />
+          </Link>
+        </div>
+        <div className="sacred-frame-pair">
+          <Link href="/products/quran" aria-label="Explore Quranic ayat">
+            <ShowcaseFrame kind="quran" />
+            <span>
+              Quranic ayat <Icon name="arrow" size={16} />
+            </span>
+          </Link>
+          <Link href="/products/hadith" aria-label="Explore Ahadees">
+            <ShowcaseFrame kind="hadith" finish="black" />
+            <span>
+              Ahadees <Icon name="arrow" size={16} />
+            </span>
+          </Link>
+        </div>
+      </section>
       <section className="section collection-section">
         <div className="section-heading">
           <div>
             <p className="eyebrow">A considered selection</p>
-            <h2>Memories, given a place.</h2>
+            <h2>Quiet beauty. Lasting presence.</h2>
           </div>
           <Link className="text-link" href="/shop">
             Explore the collection <Icon name="arrow" size={17} />
@@ -162,8 +194,9 @@ export default function Home() {
             <em>say a little more.</em>
           </h2>
           <p>
-            A favorite landscape. A beautiful building. A quiet corner of nature.
-            Create a thoughtful piece that brings a little calm into a home.
+            A favorite landscape. A beautiful building. A quiet corner of
+            nature. Create a thoughtful piece that brings a little calm into a
+            home.
           </p>
           <Link href="/shop" className="text-link">
             Find something meaningful <Icon name="arrow" />
@@ -210,7 +243,7 @@ export default function Home() {
             [
               "01",
               "Choose a memory",
-              "A photo, a special place, a relationship, or an occasion.",
+              "A landscape, a tree, a building, or an object with character.",
               "spark",
             ],
             [
@@ -323,15 +356,15 @@ export default function Home() {
       </section>
       <section className="occasion-section section">
         <div>
-          <p className="eyebrow">SOMETHING WORTH CELEBRATING?</p>
-          <h2>There’s a keepsake for that.</h2>
+          <p className="eyebrow">Discover your perspective</p>
+          <h2>Find beauty in the details.</h2>
         </div>
         <div className="occasion-links">
           {[
-            "Love & anniversaries",
-            "New beginnings",
-            "Achievements",
-            "Family & home",
+            "Nature studies",
+            "Landscapes & light",
+            "Architecture & places",
+            "Still life & objects",
           ].map((o, i) => (
             <Link href={"/shop?occasion=" + encodeURIComponent(o)} key={o}>
               <span>0{i + 1}</span>
@@ -347,8 +380,11 @@ export default function Home() {
         </div>
         <div className="closing-copy">
           <p className="eyebrow">A little more personal</p>
-          <h2>For someone who means something.</h2>
-          <p>Start with a moment. Make something they’ll keep.</p>
+          <h2>A quiet statement. Entirely yours.</h2>
+          <p>
+            Choose a view. Refine the details. Create a piece with lasting
+            presence.
+          </p>
           <Link href="/shop" className="button light">
             Create a personal gift <Icon name="arrow" />
           </Link>

@@ -1848,3 +1848,32 @@ details[open] > summary .editor-disclosure-chevron {
     transition: none !important;
   }
 }
+.artwork-upload-policy {
+  margin: 0 0 18px;
+  padding: 20px 22px;
+  background: #eee5d8;
+  border: 1px solid #cbb99f;
+  border-radius: 8px;
+  color: #4c392c;
+}
+.artwork-upload-policy strong {
+  font: 22px/1.25 var(--serif);
+}
+.artwork-upload-policy p {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 10px 0 14px;
+}
+.artwork-policy-confirm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.artwork-policy-confirm input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  accent-color: #594133;
+}

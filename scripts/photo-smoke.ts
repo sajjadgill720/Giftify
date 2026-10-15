@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import sharp from "sharp";
 import { sampleDesign } from "../packages/domain/src/index";
+import { ARTWORK_POLICY_VERSION } from "../packages/domain/src/artwork-policy";
 try {
   process.loadEnvFile(".env");
 } catch {}
@@ -21,6 +22,7 @@ async function call(route: string, body?: unknown, bytes?: Buffer) {
       Origin: base,
       Cookie: cookie,
       "Content-Type": bytes ? "application/octet-stream" : "application/json",
+      ...(bytes ? { "x-artwork-policy": ARTWORK_POLICY_VERSION } : {}),
     },
     body: bytes
       ? new Uint8Array(bytes)

@@ -24,18 +24,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 ✳ keepsake.
               </Link>
               <p>
-                Personal artwork for the people
+                Considered artwork for the places
                 <br />
-                and moments that matter.
+                and details that move you.
               </p>
             </div>
             <div>
               <h4>Find your moment</h4>
               <Link href="/shop">The collection</Link>
-              <Link href="/shop?occasion=Love%20%26%20anniversaries">
-                Love & anniversaries
+              <Link href="/shop?occasion=Nature%20studies">Nature studies</Link>
+              <Link href="/shop?occasion=Architecture%20%26%20places">
+                Architecture & places
               </Link>
-              <Link href="/shop?occasion=New%20beginnings">New beginnings</Link>
             </div>
             <div>
               <h4>Here to help</h4>

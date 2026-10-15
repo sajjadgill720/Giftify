@@ -37,6 +37,7 @@ import {
 } from "../../../packages/domain/src/payment-inbox";
 import { preview } from "../../../packages/rendering/src/preview";
 import { productionExport } from "../../../packages/domain/src/exports";
+import { requireArtworkDeclaration } from "../../../packages/domain/src/artwork-policy";
 import {
   uploadAsset,
   assetSummary,
@@ -714,6 +715,14 @@ export async function handle(
       }
     }
     if (route === "assets" && post) {
+      let contentDeclaration;
+      try {
+        contentDeclaration = requireArtworkDeclaration(
+          req.headers.get("x-artwork-policy"),
+        );
+      } catch (error) {
+        return json({ error: (error as Error).message }, 400);
+      }
       if (limit("uploads:" + id, 8))
         return json(
           { error: "Please wait a minute before adding more photographs." },
@@ -733,7 +742,12 @@ export async function handle(
         }
         chunks.push(chunk.value);
       }
-      return json(await uploadAsset(db, id, Buffer.concat(chunks)), 201);
+      return json(
+        await uploadAsset(db, id, Buffer.concat(chunks), "photo", {
+          contentDeclaration,
+        }),
+        201,
+      );
     }
     if (route === "assets" && !post)
       return json(

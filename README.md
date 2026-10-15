@@ -2,6 +2,10 @@
 
 # Keepsake consumer product — test mode
 
+## Artwork direction and upload policy
+
+The storefront focuses on nature, landscapes, architecture, places, and inanimate objects. People, portraits, selfies, weddings, pets, and other animals are not accepted. New uploads require a customer declaration in the editor and API, stored with the asset. This is not automated image recognition; existing uploads have not been retrospectively screened. See [policy scope and enforcement limits](docs/artwork-content-policy.md).
+
 An original milestone-art storefront built from [the supplied specification](SPECIFICATION.md). The working slice is catalog → customization → server quote → Safepay sandbox checkout → verified payment → revision-bound preview approval → admin production export → manual production queue. There are no live payment or shipment endpoints and no corporate subscriptions.
 
 ## Run locally
