@@ -457,14 +457,6 @@ export default function Studio({
                   <span className="field-hint">{field.hint}</span>
                 </label>
               ))}
-              <div className="soft-note">
-                <Icon name="spark" size={18} />
-                <p>
-                  Simple words often say the most. English print proofs are
-                  available; Urdu preview is supported while print validation is
-                  underway.
-                </p>
-              </div>
             </div>
           )}
           {step === 1 && (
