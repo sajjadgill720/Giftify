@@ -86,12 +86,21 @@ export function ShowcaseFrame({
   kind,
   priority = false,
   finish = "oak",
+  photoSrc,
+  wording,
 }: {
   kind: ShowcaseKind;
   priority?: boolean;
   finish?: "oak" | "black";
+  photoSrc?: string;
+  wording?: { title: string; message: string; date: string };
 }) {
-  const [image, title, message, date] = examples[kind];
+  const [image, defaultTitle, defaultMessage, defaultDate] = examples[kind];
+  const { title, message, date } = wording ?? {
+    title: defaultTitle,
+    message: defaultMessage,
+    date: defaultDate,
+  };
   return (
     <div
       className={`showcase-frame showcase-${kind === "photo" ? "photo-frame" : kind}`}
@@ -122,7 +131,7 @@ export function ShowcaseFrame({
             >
               <Image
                 src={
-                  kind === "family" || kind === "bloom"
+                  photoSrc ?? (kind === "family" || kind === "bloom"
                     ? "/images/examples/family-collage-v2.png"
                     : kind === "pet"
                       ? "/images/examples/pet-cat-watercolor.png"
@@ -130,7 +139,7 @@ export function ShowcaseFrame({
                         ? "/images/examples/couple.png"
                         : image === "place"
                           ? specialPlace
-                          : `/images/examples/${image}.png`
+                          : `/images/examples/${image}.png`)
                 }
                 alt=""
                 width={1024}

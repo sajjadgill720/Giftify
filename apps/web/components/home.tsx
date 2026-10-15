@@ -2,6 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import atelierInterior from "../public/images/examples/atelier-interior.png";
 import galleryAlcove from "../public/images/examples/gallery-alcove.png";
+import walnutInterior from "../public/images/examples/walnut-interior.png";
+import sageInterior from "../public/images/examples/sage-interior.png";
 import { catalog } from "../../../packages/domain/src/index";
 import { ProductCard } from "./product-card";
 import { Icon } from "./icons";
@@ -121,7 +123,7 @@ export default function Home() {
                 key={p.id}
                 product={p}
                 index={i}
-                sceneImage={galleryAlcove}
+                sceneImage={[atelierInterior, walnutInterior, sageInterior][i]}
               />
             ))}
         </div>
@@ -179,8 +181,8 @@ export default function Home() {
         >
           <figure className="process-photograph">
             <Image
-              src="/images/examples/couple.png"
-              alt="Example photograph of a couple at sunset"
+              src="/images/examples/mother-child-memory.png"
+              alt="Illustrative memory of a mother holding her toddler in a garden"
               width={1024}
               height={1536}
               sizes="(max-width: 600px) 35vw, 210px"
@@ -191,7 +193,15 @@ export default function Home() {
             <Icon name="arrow" size={32} />
           </span>
           <figure className="process-artwork">
-            <ShowcaseFrame kind="photo" />
+            <ShowcaseFrame
+              kind="photo"
+              photoSrc="/images/examples/mother-child-memory.png"
+              wording={{
+                title: "The smallest moments",
+                message: "Amina & Noor",
+                date: "18 · 04 · 2026",
+              }}
+            />
             <figcaption>Your keepsake</figcaption>
           </figure>
         </div>

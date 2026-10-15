@@ -95,7 +95,7 @@
   font-size: 11px;
 }
 .atelier-home .collection-section {
-  background: #eee6d9;
+  background: #f7f4ee;
   padding-top: 85px;
   padding-bottom: 85px;
 }
@@ -196,7 +196,9 @@
   display: grid;
   grid-template-columns: 0.9fr 1.1fr;
   gap: 50px;
-  background: #382c25;
+  background:
+    radial-gradient(ellipse at 75% 20%, #59604b55, transparent 65%),
+    linear-gradient(125deg, #252c28, #3b4235);
   color: #f7f4ee;
   padding-block: 85px;
 }
