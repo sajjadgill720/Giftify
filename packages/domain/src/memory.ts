@@ -75,6 +75,17 @@ export const memorySchema = z
   })
   .strict();
 export type Photo = z.infer<typeof photoSchema>;
+export type Memory = z.infer<typeof memorySchema>;
+export function selectMemoryMode(memory: Memory, mode: Memory["mode"]): Memory {
+  return {
+    ...memory,
+    mode,
+    layout:
+      mode !== "photo" && ["collage", "fullbleed"].includes(memory.layout)
+        ? "portrait"
+        : memory.layout,
+  };
+}
 export const memoryProfiles = {
   photo: {
     name: "Your favorite moment",

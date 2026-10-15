@@ -5,6 +5,7 @@ import type { Photo } from "../../domain/src/memory";
 export function memoryPictures(d: Design): Picture[] {
   const m = d.memory;
   if (!m || m.mode === "words") return [];
+  if (m.mode === "place" && !m.map) return [];
   const [w, h] = dimensions[d.size],
     margin = w * 0.09;
   const top = h * 0.065,

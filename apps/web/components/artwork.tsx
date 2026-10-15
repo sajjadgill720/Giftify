@@ -23,12 +23,16 @@ export function Artwork({
   onPhotoPosition?: (index: number, position: { x: number; y: number }) => void;
 }) {
   const d = design || sampleDesign();
-  const example = showcaseFor(d.template);
+  const example =
+    d.memory?.mode === "place"
+      ? "place"
+      : d.memory?.mode === "photo" && d.template === "place"
+        ? "photo"
+        : showcaseFor(d.template);
   const emptyPhoto =
     d.memory &&
     d.memory.mode !== "words" &&
-    !d.memory.photos.length &&
-    !d.memory.map;
+    (d.memory.mode === "place" ? !d.memory.map : !d.memory.photos.length);
   if (
     example &&
     !previewUrl &&

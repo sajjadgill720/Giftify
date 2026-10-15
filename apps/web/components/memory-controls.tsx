@@ -7,6 +7,7 @@ import {
   defaultMemory,
   cropGeometry,
   Photo,
+  selectMemoryMode,
 } from "../../../packages/domain/src/memory";
 import { memoryPictures } from "../../../packages/rendering/src/memory-layout";
 import { api, ApiError } from "../lib/client";
@@ -42,6 +43,12 @@ export function MemoryControls({
   useEffect(() => {
     latest.current = design;
   }, [design]);
+  useEffect(() => {
+    setReplace(false);
+    setAdding(false);
+    setSelected(0);
+    setError("");
+  }, [m.mode]);
   useEffect(() => {
     api("assets")
       .then(setAssets)
@@ -175,6 +182,7 @@ export function MemoryControls({
         Choose your kind of memory
         <select
           value={design.template}
+          disabled={busy}
           onChange={(e) => {
             const template = e.target.value as (typeof memoryTemplates)[number],
               previous =
@@ -227,15 +235,8 @@ export function MemoryControls({
             key={mode}
             className={m.mode === mode ? "selected" : ""}
             aria-pressed={m.mode === mode}
-            onClick={() =>
-              update({
-                mode,
-                layout:
-                  mode !== "photo" && m.layout === "fullbleed"
-                    ? "portrait"
-                    : m.layout,
-              })
-            }
+            disabled={busy}
+            onClick={() => update(selectMemoryMode(m, mode))}
           >
             {label}
           </button>
@@ -352,228 +353,237 @@ export function MemoryControls({
               </label>
             </div>
           )}
-          {(!m.photos.length || replace || adding) && (
-            <label
-              className="photo-upload"
-              onDragOver={(e) => {
-                e.preventDefault();
-                if (!busy) e.currentTarget.classList.add("drag-active");
-              }}
-              onDragLeave={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node))
-                  e.currentTarget.classList.remove("drag-active");
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                e.currentTarget.classList.remove("drag-active");
-                void upload(e.dataTransfer.files);
-              }}
-            >
-              <Icon name="frame" size={25} />
-              <strong>
-                {busy
-                  ? "Keeping your photo safe…"
-                  : replace
-                    ? "Replace selected photograph"
-                    : m.mode === "place"
-                      ? "Add a photograph to your map"
-                      : "Add your favorite photographs"}
-              </strong>
-              <span>
-                Drop photos here or choose files · JPEG or PNG · Up to 8 MB each
-              </span>
-              <input
-                aria-label="Upload photographs"
-                type="file"
-                accept="image/jpeg,image/png"
-                multiple={!replace}
-                disabled={busy}
-                onChange={(e) => {
-                  void upload(e.target.files);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-          )}
-          {(replace || adding) && m.photos.length > 0 && (
-            <button
-              className="text-button"
-              disabled={busy}
-              onClick={() => {
-                setReplace(false);
-                setAdding(false);
-              }}
-            >
-              Cancel photo change
-            </button>
-          )}
-          {!m.photos.length && (
-            <details className="image-inspiration">
-              <summary>Find photo inspiration on Google</summary>
-              <label className="field">
-                What would you like to find?
-                <input
-                  value={imageQuery}
-                  maxLength={100}
-                  onChange={(e) => setImageQuery(e.target.value)}
-                  placeholder="e.g. a peaceful mountain landscape"
-                />
-              </label>
-              {imageQuery.trim() && (
-                <a
-                  className="text-link"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href={`https://www.google.com/search?udm=2&q=${encodeURIComponent(imageQuery.trim())}`}
+          {m.mode === "photo" && (
+            <div key="photo-controls" className="photo-source-controls">
+              {(!m.photos.length || replace || adding) && (
+                <label
+                  className="photo-upload"
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (!busy) e.currentTarget.classList.add("drag-active");
+                  }}
+                  onDragLeave={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node))
+                      e.currentTarget.classList.remove("drag-active");
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove("drag-active");
+                    void upload(e.dataTransfer.files);
+                  }}
                 >
-                  Search Google Images ↗
-                </a>
-              )}
-              <p className="field-hint">
-                Opens Google in a new tab. Upload a photo you own or have
-                permission to print.
-              </p>
-            </details>
-          )}
-          {m.photos.length > 0 && (
-            <>
-              <div className="photo-manager-heading">
-                <div>
-                  <strong>Your photographs</strong>
-                  <span>{m.photos.length} added · Kept privately</span>
-                </div>
-                <div className="photo-manager-actions">
-                  <button
-                    className="text-button"
+                  <Icon name="frame" size={25} />
+                  <strong>
+                    {busy
+                      ? "Keeping your photo safe…"
+                      : replace
+                        ? "Replace selected photograph"
+                        : "Add your favorite photographs"}
+                  </strong>
+                  <span>
+                    Drop photos here or choose files · JPEG or PNG · Up to 8 MB
+                    each
+                  </span>
+                  <input
+                    aria-label="Upload photographs"
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    multiple={!replace}
                     disabled={busy}
-                    onClick={() => {
-                      setAdding(false);
-                      setReplace(true);
+                    onChange={(e) => {
+                      void upload(e.target.files);
+                      e.target.value = "";
                     }}
-                  >
-                    Change photo
-                  </button>
-                  {m.photos.length < 4 && (
-                    <button
-                      className="text-button"
-                      disabled={busy}
-                      onClick={() => {
-                        setReplace(false);
-                        setAdding(true);
-                      }}
+                  />
+                </label>
+              )}
+              {(replace || adding) && m.photos.length > 0 && (
+                <button
+                  className="text-button"
+                  disabled={busy}
+                  onClick={() => {
+                    setReplace(false);
+                    setAdding(false);
+                  }}
+                >
+                  Cancel photo change
+                </button>
+              )}
+              {!m.photos.length && (
+                <details className="image-inspiration">
+                  <summary>Find photo inspiration on Google</summary>
+                  <label className="field">
+                    What would you like to find?
+                    <input
+                      value={imageQuery}
+                      maxLength={100}
+                      onChange={(e) => setImageQuery(e.target.value)}
+                      placeholder="e.g. a peaceful mountain landscape"
+                    />
+                  </label>
+                  {imageQuery.trim() && (
+                    <a
+                      className="text-link"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      href={`https://www.google.com/search?udm=2&q=${encodeURIComponent(imageQuery.trim())}`}
                     >
-                      + Add another
-                    </button>
+                      Search Google Images ↗
+                    </a>
                   )}
-                </div>
-              </div>
-              <div className="photo-picker">
-                {m.photos.map((p, i) => (
-                  <button
-                    key={p.assetId + ":" + i}
-                    aria-label={`Edit photograph ${i + 1}`}
-                    aria-pressed={i === selected}
-                    onClick={() => setSelected(i)}
-                    className={i === selected ? "selected" : ""}
-                  >
-                    <img
-                      src={`/api/assets/${p.assetId}/preview`}
-                      alt={`Uploaded photograph ${i + 1}`}
-                    />
-                  </button>
-                ))}
-              </div>
-              {active && (
-                <details className="photo-edit-panel">
-                  <summary>Crop, rotate & filter your photo</summary>
-                  <p className="eyebrow">
-                    PHOTOGRAPH {selected + 1} · YOUR PERFECT CROP
+                  <p className="field-hint">
+                    Opens Google in a new tab. Upload a photo you own or have
+                    permission to print.
                   </p>
-                  <label className="field">
-                    Zoom
-                    <input
-                      type="range"
-                      min={1}
-                      max={3}
-                      step={0.01}
-                      value={active.zoom}
-                      onChange={(e) =>
-                        photoEdit({ zoom: Number(e.target.value) })
-                      }
-                    />
-                  </label>
-                  <label className="field">
-                    Move left or right
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={active.x}
-                      onChange={(e) => photoEdit({ x: Number(e.target.value) })}
-                    />
-                  </label>
-                  <label className="field">
-                    Move up or down
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={active.y}
-                      onChange={(e) => photoEdit({ y: Number(e.target.value) })}
-                    />
-                  </label>
-                  <div className="photo-edit-actions">
-                    <button
-                      className="text-button"
-                      onClick={() =>
-                        photoEdit({
-                          rotation: ((active.rotation + 90) %
-                            360) as Photo["rotation"],
-                        })
-                      }
-                    >
-                      ↻ Rotate photo
-                    </button>
-                    <button
-                      className="text-button"
-                      onClick={() => {
-                        setAdding(false);
-                        setReplace(true);
-                      }}
-                    >
-                      Replace photo
-                    </button>
-                    <button
-                      className="text-button"
-                      onClick={() => {
-                        update({
-                          photos: m.photos.filter((_, i) => i !== selected),
-                          qualityAcknowledged: false,
-                        });
-                        setSelected(0);
-                      }}
-                    >
-                      Remove from design
-                    </button>
-                  </div>
-                  <label className="field">
-                    Photo filter
-                    <select
-                      value={active.filter}
-                      onChange={(e) =>
-                        photoEdit({ filter: e.target.value as Photo["filter"] })
-                      }
-                    >
-                      <option value="original">Original colours</option>
-                      <option value="bw">Timeless black & white</option>
-                      <option value="warm">Soft warmth</option>
-                    </select>
-                  </label>
                 </details>
               )}
-            </>
+              {m.photos.length > 0 && (
+                <>
+                  <div className="photo-manager-heading">
+                    <div>
+                      <strong>Your photographs</strong>
+                      <span>{m.photos.length} added · Kept privately</span>
+                    </div>
+                    <div className="photo-manager-actions">
+                      <button
+                        className="text-button"
+                        disabled={busy}
+                        onClick={() => {
+                          setAdding(false);
+                          setReplace(true);
+                        }}
+                      >
+                        Change photo
+                      </button>
+                      {m.photos.length < 4 && (
+                        <button
+                          className="text-button"
+                          disabled={busy}
+                          onClick={() => {
+                            setReplace(false);
+                            setAdding(true);
+                          }}
+                        >
+                          + Add another
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="photo-picker">
+                    {m.photos.map((p, i) => (
+                      <button
+                        key={p.assetId + ":" + i}
+                        aria-label={`Edit photograph ${i + 1}`}
+                        aria-pressed={i === selected}
+                        onClick={() => setSelected(i)}
+                        className={i === selected ? "selected" : ""}
+                      >
+                        <img
+                          src={`/api/assets/${p.assetId}/preview`}
+                          alt={`Uploaded photograph ${i + 1}`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  {active && (
+                    <details className="photo-edit-panel">
+                      <summary>Crop, rotate & filter your photo</summary>
+                      <p className="eyebrow">
+                        PHOTOGRAPH {selected + 1} · YOUR PERFECT CROP
+                      </p>
+                      <label className="field">
+                        Zoom
+                        <input
+                          type="range"
+                          min={1}
+                          max={3}
+                          step={0.01}
+                          value={active.zoom}
+                          onChange={(e) =>
+                            photoEdit({ zoom: Number(e.target.value) })
+                          }
+                        />
+                      </label>
+                      <label className="field">
+                        Move left or right
+                        <input
+                          type="range"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          value={active.x}
+                          onChange={(e) =>
+                            photoEdit({ x: Number(e.target.value) })
+                          }
+                        />
+                      </label>
+                      <label className="field">
+                        Move up or down
+                        <input
+                          type="range"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          value={active.y}
+                          onChange={(e) =>
+                            photoEdit({ y: Number(e.target.value) })
+                          }
+                        />
+                      </label>
+                      <div className="photo-edit-actions">
+                        <button
+                          className="text-button"
+                          onClick={() =>
+                            photoEdit({
+                              rotation: ((active.rotation + 90) %
+                                360) as Photo["rotation"],
+                            })
+                          }
+                        >
+                          ↻ Rotate photo
+                        </button>
+                        <button
+                          className="text-button"
+                          onClick={() => {
+                            setAdding(false);
+                            setReplace(true);
+                          }}
+                        >
+                          Replace photo
+                        </button>
+                        <button
+                          className="text-button"
+                          onClick={() => {
+                            update({
+                              photos: m.photos.filter((_, i) => i !== selected),
+                              qualityAcknowledged: false,
+                            });
+                            setSelected(0);
+                          }}
+                        >
+                          Remove from design
+                        </button>
+                      </div>
+                      <label className="field">
+                        Photo filter
+                        <select
+                          value={active.filter}
+                          onChange={(e) =>
+                            photoEdit({
+                              filter: e.target.value as Photo["filter"],
+                            })
+                          }
+                        >
+                          <option value="original">Original colours</option>
+                          <option value="bw">Timeless black & white</option>
+                          <option value="warm">Soft warmth</option>
+                        </select>
+                      </label>
+                    </details>
+                  )}
+                </>
+              )}
+            </div>
           )}
         </>
       )}
@@ -594,7 +604,7 @@ export function MemoryControls({
           onChange={(e) => update({ names: e.target.value })}
         />
       </label>
-      {design.template === "birthday" && (
+      {m.mode === "photo" && design.template === "birthday" && (
         <label className="field">
           Age you’re celebrating
           <input
@@ -642,7 +652,9 @@ export function MemoryControls({
             >
               <option value="portrait">Classic portrait</option>
               <option value="gallery">Gallery border</option>
-              <option value="collage">Photo collage</option>
+              {m.mode === "photo" && (
+                <option value="collage">Photo collage</option>
+              )}
               {m.layout === "fullbleed" && (
                 <option value="fullbleed" hidden>
                   Previously saved layout
