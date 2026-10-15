@@ -147,10 +147,7 @@ export default function Home() {
             A first home. A hard-earned milestone. Your favorite person. Create
             a thoughtful gift that says what ordinary words can’t.
           </p>
-          <Link
-            href="/shop?occasion=Love%20%26%20anniversaries"
-            className="text-link"
-          >
+          <Link href="/shop" className="text-link">
             Find something meaningful <Icon name="arrow" />
           </Link>
         </div>
