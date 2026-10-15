@@ -233,42 +233,88 @@ em {
 }
 .memory-category-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0 35px;
+  gap: 18px;
 }
 .memory-category-card {
   position: relative;
-  padding: 23px 0 20px;
-  background: transparent !important;
-  border: 0;
-  border-top: 1px solid var(--line);
-  border-radius: 0;
-  min-height: 0;
-  transition: border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 25px;
+  background: #ece1d3;
+  color: #3d2d24;
+  border: 1px solid #d9c6af;
+  border-radius: 5px;
+  min-height: 245px;
+  box-shadow: 0 3px 8px #382c2504;
+  transition:
+    transform 0.24s ease,
+    box-shadow 0.24s ease,
+    border-color 0.24s ease;
 }
-.memory-category-card:hover {
-  transform: none;
-  border-color: #9a8058;
+.memory-category-card:nth-child(4n + 2) {
+  background: #e2cfb9;
+}
+.memory-category-card:nth-child(4n + 3) {
+  background: #d3b89a;
+}
+.memory-category-card:nth-child(4n) {
+  background: #594133;
+  color: #fbf5eb;
 }
 .memory-category-card h3 {
   font-size: 24px;
-  padding-right: 22px;
+  padding-right: 0;
   margin: 0 0 8px;
+  color: inherit;
 }
 .memory-category-card p {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.7;
-  margin-bottom: 10px;
+  margin: 0 0 25px;
+  color: inherit;
 }
 .memory-category-card .category-number {
-  top: 25px;
-  right: 0;
-  color: #746d63;
-  font-size: 10px;
+  position: static;
+  color: inherit;
+  font-size: 11px;
+  border: 1px solid #76563c55;
+  border-radius: 50%;
+  width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 25px;
+}
+.memory-category-card:nth-child(4n) .category-number {
+  border-color: #ecdfcc66;
 }
 .memory-category-card .text-link {
-  padding: 3px 0;
+  padding: 0;
   border: 0;
-  font-size: 11px;
+  font-size: 12px;
+  color: inherit;
+  margin-top: auto;
+  width: 100%;
+  justify-content: space-between;
+}
+.memory-category-card .text-link svg {
+  transition: transform 0.24s ease;
+}
+.memory-category-card:focus-visible {
+  transform: translateY(-6px);
+  box-shadow: 0 15px 28px #382c251c;
+  outline-offset: 4px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .memory-category-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 15px 28px #382c251c;
+    border-color: #927250;
+  }
+  .memory-category-card:hover .text-link svg {
+    transform: translateX(4px);
+  }
 }
 .collection-section {
   padding-top: 30px;
@@ -400,27 +446,88 @@ em {
 .finish-guide {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 9%;
+  gap: 45px 7%;
   align-items: center;
-  background: #f0eae0;
+  background: #e9ddcd;
+  border-block: 1px solid #d4bfa5;
+  color: #382c25;
+}
+.finish-guide-heading {
+  grid-column: 1 / -1;
+  max-width: 760px;
+}
+.finish-guide-heading h2 {
+  margin: 15px 0 18px;
+  color: #382c25;
+}
+.finish-guide-heading h2 em {
+  color: #78583c;
+}
+.finish-guide-heading > p:last-child {
+  color: #65503e;
 }
 .finish-study {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
   align-items: center;
-  padding: 40px 28px 25px;
-  background: #e8dfd1;
+  padding: 45px 28px 25px;
+  background: linear-gradient(135deg, #d8c3a9, #c9ad8e);
+  border: 1px solid #bea181;
+  border-radius: 5px;
 }
 .finish-study figure {
   margin: 0;
   min-width: 0;
 }
 .finish-study figcaption {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
   font-size: 12px;
-  color: #514b43;
+  color: #382c25;
   margin-top: 25px;
+}
+.finish-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid #382c2540;
+  box-shadow: 0 0 0 3px #f7f4ee65;
+  flex-shrink: 0;
+}
+.finish-dot.oak {
+  background: #b58b5c;
+}
+.finish-dot.black {
+  background: #2d2c29;
+}
+.finish-guide-copy {
+  padding: 32px;
+  background: #f7f1e8;
+  border: 1px solid #d8c6b0;
+  border-radius: 5px;
+}
+.finish-detail-heading {
+  display: flex;
+  gap: 17px;
+  margin-bottom: 25px;
+}
+.finish-detail-heading > span {
+  color: #78583c;
+  font-size: 11px;
+  padding-top: 6px;
+}
+.finish-detail-heading h3 {
+  font-size: 27px;
+  color: #382c25;
+  margin: 0 0 9px;
+}
+.finish-detail-heading p {
+  font-size: 14px;
+  margin: 0;
+  color: #65503e;
 }
 .finish-study > p {
   grid-column: 1 / -1;
@@ -435,11 +542,18 @@ em {
   margin-bottom: 20px;
 }
 .size-guide {
-  display: flex;
-  gap: 45px;
-  margin: 27px 0;
-  padding: 23px 0;
-  border-block: 1px solid #d6ccbd;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 0 0 25px;
+  padding: 0;
+  border: 0;
+}
+.size-guide > div {
+  padding: 20px 16px;
+  border: 1px solid #d7c3a9;
+  background: #eee2d1;
+  border-radius: 3px;
 }
 .size-guide dt {
   font-family: var(--serif);
@@ -449,7 +563,12 @@ em {
 .size-guide dd {
   margin: 0;
   font-size: 13px;
-  color: var(--muted);
+  color: #65503e;
+}
+.size-guide dd span {
+  display: block;
+  margin-top: 10px;
+  font-size: 11px;
 }
 .occasion-section {
   gap: 8%;
@@ -742,7 +861,7 @@ input[type="range"] {
     gap: 8px;
   }
   .memory-category-grid {
-    gap: 0 25px;
+    gap: 15px;
   }
   .finish-guide {
     gap: 6%;
@@ -890,7 +1009,11 @@ input[type="range"] {
     margin-top: 20px;
   }
   .memory-category-grid {
-    gap: 0 20px;
+    gap: 12px;
+  }
+  .memory-category-card {
+    padding: 19px 16px;
+    min-height: 225px;
   }
   .memory-category-card h3 {
     font-size: 21px;
@@ -900,7 +1023,8 @@ input[type="range"] {
     font-size: 12px;
   }
   .memory-category-card .category-number {
-    display: none;
+    display: grid;
+    margin-bottom: 20px;
   }
   .collection-section {
     padding-top: 0;
@@ -958,6 +1082,12 @@ input[type="range"] {
   .finish-study {
     padding: 28px 8%;
     gap: 18px;
+  }
+  .finish-guide-copy {
+    padding: 25px 20px;
+  }
+  .finish-guide-heading h2 {
+    font-size: 36px;
   }
   .finish-guide-copy h2 {
     font-size: 34px;
@@ -1026,7 +1156,10 @@ input[type="range"] {
     scroll-behavior: auto;
   }
   .product-card:hover .showcase-frame,
-  .product-card:hover .art-frame {
+  .product-card:hover .art-frame,
+  .memory-category-card:hover,
+  .memory-category-card:focus-visible,
+  .memory-category-card:hover .text-link svg {
     transform: none;
   }
   .button:hover {

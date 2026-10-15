@@ -70,9 +70,13 @@ export default function Home() {
               href={"/products/" + id}
               key={id}
             >
-              <span className="category-number">0{i + 1}</span>
-              <h3>{memoryProfiles[id].category}</h3>
-              <p>{memoryProfiles[id].hint}</p>
+              <span className="category-number" aria-hidden="true">
+                0{i + 1}
+              </span>
+              <div className="category-copy">
+                <h3>{memoryProfiles[id].category}</h3>
+                <p>{memoryProfiles[id].hint}</p>
+              </div>
               <span className="text-link">
                 Explore <Icon name="arrow" size={14} />
               </span>
@@ -171,41 +175,65 @@ export default function Home() {
         </div>
       </section>
       <section className="section finish-guide">
+        <div className="finish-guide-heading">
+          <p className="eyebrow">The finishing touches</p>
+          <h2>
+            Your story. <em>Beautifully set.</em>
+          </h2>
+          <p>Two finishes. Two sizes. A little space for something personal.</p>
+        </div>
         <div
           className="finish-study"
           aria-label="Illustrative comparison of supported frame finishes"
         >
           <figure>
             <ShowcaseFrame kind="photo" finish="oak" />
-            <figcaption>Oak effect</figcaption>
+            <figcaption>
+              <span className="finish-dot oak" />
+              Oak effect
+            </figcaption>
           </figure>
           <figure>
             <ShowcaseFrame kind="photo" finish="black" />
-            <figcaption>Matte black</figcaption>
+            <figcaption>
+              <span className="finish-dot black" />
+              Matte black
+            </figcaption>
           </figure>
           <p className="artwork-disclaimer">
             Digital finish studies · Illustrative, not product photography
           </p>
         </div>
         <div className="finish-guide-copy">
-          <p className="eyebrow">The setting for your story</p>
-          <h2>
-            A considered size.
-            <br />
-            <em>A finish that feels right.</em>
-          </h2>
-          <p>
-            Compare our two supported finishes and choose the print size that
-            suits your space. Your preview updates as you make it your own.
-          </p>
+          <div className="finish-detail-heading">
+            <span aria-hidden="true">01</span>
+            <div>
+              <h3>Find your finish</h3>
+              <p>
+                Warm oak effect or understated matte black. Compare both in your
+                live preview.
+              </p>
+            </div>
+          </div>
+          <div className="finish-detail-heading">
+            <span aria-hidden="true">02</span>
+            <div>
+              <h3>Give it the right space</h3>
+              <p>Choose the print dimensions that suit your setting.</p>
+            </div>
+          </div>
           <dl className="size-guide">
             <div>
               <dt>A4</dt>
-              <dd>21 × 29.7 cm</dd>
+              <dd>
+                21 × 29.7 cm<span>A personal corner</span>
+              </dd>
             </div>
             <div>
               <dt>A3</dt>
-              <dd>29.7 × 42 cm</dd>
+              <dd>
+                29.7 × 42 cm<span>A little more presence</span>
+              </dd>
             </div>
           </dl>
           <p className="fine-print">
