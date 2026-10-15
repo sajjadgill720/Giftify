@@ -58,7 +58,7 @@ const examples = {
     "A little older, a lot more loved",
     "12 · 08 · 2026",
   ],
-  pet: ["pet", "Spruce", "Forever by our side", "OUR FIRST HELLO · 2019"],
+  pet: ["pet", "Cleo", "Forever by our side", "OUR FIRST HELLO · 2019"],
   travel: [
     "travel",
     "Amalfi, with you",
@@ -138,7 +138,7 @@ export function ShowcaseFrame({
                     kind === "family" || kind === "bloom"
                       ? "/images/examples/family-collage-v2.png"
                       : kind === "pet"
-                        ? "/images/examples/pet-watercolor.png"
+                        ? "/images/examples/pet-cat-watercolor.png"
                         : image === "photo"
                           ? "/images/examples/couple.png"
                           : image === "place"
