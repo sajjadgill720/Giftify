@@ -969,11 +969,13 @@ export function MemoryControls({
       </details>
       {warnings.length > 0 && (
         <div className="image-quality-note">
-          <strong>Let’s make sure your print looks its best.</strong>
+          <strong>
+            Photo quality · {Math.min(...warnings.map((w) => w.dpi))} DPI
+          </strong>
           <p>
-            Selected crops: {warnings.map((w) => w.dpi + " DPI").join(", ")}.
-            Our target is 300 DPI. Below 100 DPI cannot be ordered. Try a
-            smaller print or zoom out.
+            {warnings.some((w) => w.dpi < 100)
+              ? "Too low to print. Choose a smaller size or zoom out."
+              : "300 DPI recommended · 100 DPI minimum."}
           </p>
           <PrintQualityExplainer />
           <label className="checkbox-field">
@@ -984,7 +986,7 @@ export function MemoryControls({
                 update({ qualityAcknowledged: e.target.checked })
               }
             />
-            <span>I understand the image-quality limitation of this crop.</span>
+            <span>I accept the reduced sharpness.</span>
           </label>
         </div>
       )}

@@ -1008,6 +1008,38 @@ details[open] > summary .editor-disclosure-chevron {
 .photo-manager-heading strong {
   font-weight: 500;
 }
+.image-quality-note {
+  padding: 14px 16px;
+  border-radius: 5px;
+  margin-top: 18px;
+}
+.image-quality-note > strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.image-quality-note > p {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 6px 0;
+}
+.image-quality-note .print-quality-explainer {
+  margin: 4px 0;
+  padding: 0;
+  border: 0;
+}
+.image-quality-note .print-quality-explainer summary {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.image-quality-note .checkbox-field {
+  min-height: 44px;
+  margin: 0;
+  font-size: 12px;
+  gap: 10px;
+}
 @media (max-width: 1100px) {
   .site-nav {
     gap: 18px;

@@ -42,11 +42,11 @@ export function PhotoQualityReview({
   if (!warnings.length) return null;
   return (
     <div className="image-quality-note">
-      <strong>Check your selected image quality.</strong>
+      <strong>Photo quality · {Math.min(...warnings)} DPI</strong>
       <p>
-        Your crop is {warnings.join(" / ")} DPI at this print size. Target: 300
-        DPI. Below 100 DPI cannot be ordered. You can reduce the size or zoom
-        out.
+        {warnings.some((dpi) => dpi < 100)
+          ? "Too low to print. Choose a smaller size or zoom out."
+          : "300 DPI recommended · 100 DPI minimum."}
       </p>
       <PrintQualityExplainer />
       <label className="checkbox-field">
@@ -63,7 +63,7 @@ export function PhotoQualityReview({
             })
           }
         />
-        <span>I understand the image-quality limitation of this crop.</span>
+        <span>I accept the reduced sharpness.</span>
       </label>
     </div>
   );
