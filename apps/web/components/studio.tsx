@@ -273,6 +273,31 @@ export default function Studio({
               </select>
             </label>
           </div>
+          <div className="preview-meta">
+            {step === 0 && design.memory && (
+              <p className="text-position-hint">
+                Drag text up or down to adjust spacing. Use arrow keys for
+                precise movement.
+              </p>
+            )}
+            <div className="preview-tools">
+              <span>
+                {design.size} ·{" "}
+                {design.finish === "oak" ? "Oak effect" : "Matte black"} frame
+              </span>
+              <button
+                className="icon-button"
+                aria-label="View larger preview"
+                onClick={() => setZoom(true)}
+              >
+                <Icon name="search" />
+              </button>
+            </div>
+            <p className="fine-print">
+              Preview of a physical print · Production files are reserved for
+              the print team.
+            </p>
+          </div>
           <div
             className={"studio-art memory-scene-" + scene}
             style={
@@ -335,29 +360,6 @@ export default function Studio({
               </button>
             ))}
           </div>
-          {step === 0 && design.memory && (
-            <p className="text-position-hint">
-              Drag text up or down to adjust spacing. Use arrow keys for precise
-              movement.
-            </p>
-          )}
-          <div className="preview-tools">
-            <span>
-              {design.size} ·{" "}
-              {design.finish === "oak" ? "Oak effect" : "Matte black"} frame
-            </span>
-            <button
-              className="icon-button"
-              aria-label="View larger preview"
-              onClick={() => setZoom(true)}
-            >
-              <Icon name="search" />
-            </button>
-          </div>
-          <p className="fine-print">
-            Preview of a physical print · Production files are reserved for the
-            print team.
-          </p>
         </div>
         <div className="studio-controls">
           <div className="step-tabs" aria-label="Design steps">
