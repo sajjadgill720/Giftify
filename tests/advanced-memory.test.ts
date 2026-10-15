@@ -78,6 +78,30 @@ test("all typography options appear in SVG and produce a real print PDF", async 
     assert.equal((await pdf(d)).subarray(0, 4).toString(), "%PDF");
   }
 });
+test("gallery paper color covers both the outer border and the area beneath photos", async () => {
+  for (const template of ["photo", "family"] as const) {
+    const d = sampleDesign(template);
+    d.memory!.layout = "gallery";
+    d.memory!.background = "ivory";
+    d.memory!.backgroundColor = "#d3c197";
+    const { data, info } = await sharp(Buffer.from(svg(d)))
+      .resize(210, 297)
+      .removeAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    for (const [x, y] of [
+      [4, 4],
+      [30, 250],
+    ]) {
+      const offset = (y * info.width + x) * info.channels;
+      assert.deepEqual(
+        Array.from(data.subarray(offset, offset + 3)),
+        [211, 193, 151],
+      );
+    }
+  }
+});
+
 test("custom styling is bounded and cannot inject arbitrary SVG or CSS", () => {
   const d = photoDesign();
   assert.equal(

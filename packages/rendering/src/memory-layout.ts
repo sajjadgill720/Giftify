@@ -182,7 +182,7 @@ export function memoryLayout(d: Design): ArtworkLayout {
       h * 0.035,
       w * 0.89,
       h * 0.91,
-      background,
+      paper,
       m.background === "midnight" ? "#8b9caa" : "#ccc2b4",
     );
   if (m.mode !== "words") {
